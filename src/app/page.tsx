@@ -208,8 +208,7 @@ export default function HomePage() {
             </ScrollFadeIn>
 
             <div className="mt-16 grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3">
-              {/* First 3 sector cards */}
-              {sectors.slice(0, 3).map((sector) => (
+              {sectors.map((sector) => (
                 <ScrollFadeIn key={sector.id}>
                   <SectorCard
                     name={sector.name}
@@ -217,22 +216,6 @@ export default function HomePage() {
                     icon={sector.icon}
                     shortDescription={sector.shortDescription}
                   />
-                </ScrollFadeIn>
-              ))}
-            </div>
-
-            {/* Remaining sector cards — centered */}
-            <div className="mt-8 flex flex-wrap justify-center gap-8">
-              {sectors.slice(3).map((sector) => (
-                <ScrollFadeIn key={sector.id}>
-                  <div className="w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.5rem)]">
-                    <SectorCard
-                      name={sector.name}
-                      slug={sector.slug}
-                      icon={sector.icon}
-                      shortDescription={sector.shortDescription}
-                    />
-                  </div>
                 </ScrollFadeIn>
               ))}
             </div>

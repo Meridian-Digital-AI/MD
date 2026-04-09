@@ -3,6 +3,7 @@ import { Mail, Phone, MapPin, Clock } from 'lucide-react';
 import SectionHeading from '@/components/SectionHeading';
 import ScrollFadeIn from '@/components/ScrollFadeIn';
 import ContactForm from '@/components/ContactForm';
+import BookingCalendar from '@/components/BookingCalendar';
 import { siteConfig } from '@/lib/data/config';
 
 export const metadata: Metadata = {
@@ -42,12 +43,7 @@ export default function ContactPage() {
           </ScrollFadeIn>
 
           <ScrollFadeIn delay={100}>
-            {/* PLACEHOLDER: Replace with Cal.com or Calendly embed before launch */}
-            <div className="mt-12 flex min-h-[400px] items-center justify-center rounded-xl border border-gray-200 bg-gray-50 p-8">
-              <p className="text-body text-gray-500">
-                Booking calendar will appear here
-              </p>
-            </div>
+            <BookingCalendar />
           </ScrollFadeIn>
         </div>
       </section>

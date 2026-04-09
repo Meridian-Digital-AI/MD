@@ -34,7 +34,7 @@ export default function SectorCard({
   return (
     <Link
       href={`/sectors/${slug}`}
-      className="flex cursor-pointer flex-col items-start rounded-xl border border-gray-200 bg-white p-6 card-hover"
+      className="flex cursor-pointer flex-col items-start rounded-xl border border-gray-200 bg-white p-6 card-hover h-full"
       aria-label={`Learn more about our ${name} services`}
     >
       <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600/10">

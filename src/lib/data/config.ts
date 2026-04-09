@@ -25,7 +25,7 @@ export const siteConfig: SiteConfig = {
     'We build modern websites with built-in business automation for local businesses in Exeter and Devon. AI-powered delivery, London quality, Exeter prices.',
   url: 'https://meridiandigital.co.uk', // PLACEHOLDER — replace before launch
   email: 'hello@meridiandigital.co.uk', // PLACEHOLDER — replace before launch
-  phone: '01392 000 000', // PLACEHOLDER — replace before launch
+  phone: '07498 588299',
   address: 'Exeter, Devon',
   workingHours: 'Monday to Friday, 9am–5pm',
   foundedYear: 2026,

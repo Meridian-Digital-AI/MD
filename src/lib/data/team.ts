@@ -12,14 +12,14 @@ export const team: TeamMember[] = [
     id: 'will',
     name: 'Will',
     initials: 'WA',
-    role: 'Website Design & Automation',
-    bio: 'Will handles website design and automation builds. He uses AI to build production-quality code, delivering custom Next.js sites and automation systems at a fraction of traditional agency costs.',
+    role: 'Co-Founder',
+    bio: 'Will co-founded Meridian Digital to help local businesses in Exeter get the digital tools they deserve — modern websites, smart automation, and marketing that actually works.',
   },
   {
-    id: 'partner',
-    name: 'Partner', // PLACEHOLDER — replace before launch
-    initials: 'MD',
-    role: 'Ads & Marketing Strategy',
-    bio: 'Our marketing specialist handles Google and Meta advertising, campaign strategy, and performance optimisation — driving the right customers to your new digital presence.',
+    id: 'joe',
+    name: 'Joe',
+    initials: 'JA',
+    role: 'Co-Founder',
+    bio: 'Joe co-founded Meridian Digital with a focus on helping local businesses grow. From strategy to execution, he works alongside Will to deliver results that make a real difference.',
   },
 ];

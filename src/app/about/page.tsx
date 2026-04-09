@@ -39,14 +39,10 @@ export default function AboutPage() {
             <ScrollFadeIn>
               <div className="max-w-prose space-y-6">
                 <p className="text-body text-gray-700">
-                  We&rsquo;re Will and {team[1]?.name ?? 'Partner'}, and we run
-                  Meridian Digital from Exeter.
-                </p>
-                <p className="text-body text-gray-700">
-                  Will handles website design and automation builds.{' '}
-                  {team[1]?.name ?? 'Partner'} handles advertising and marketing
-                  strategy. Between us, we cover everything a local business
-                  needs to grow online.
+                  We&rsquo;re Will and Joe, and we run Meridian Digital from
+                  Exeter. Between us, we cover everything a local business needs
+                  to grow online &mdash; from website design and automation to
+                  advertising and marketing strategy.
                 </p>
                 <p className="text-body text-gray-700">
                   We use AI to build our code, which means we can deliver the

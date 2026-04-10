@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Dashboard - AdPilot AI{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <div>
+        <h1>Welcome back</h1>
+        <p class="muted">{{ customer.email }} · Plan: <strong>{{ (customer.plan or 'None') | title }}</strong> · Status: <strong>{{ (customer.subscription_status or 'none') | title }}</strong></p>
+    </div>
+    <a href="{{ url_for('onboarding') }}" class="btn btn-primary">+ New Campaign</a>
+</div>
+
+{% if campaigns %}
+    <div class="campaign-grid">
+        {% for c in campaigns %}
+        <div class="campaign-card">
+            <div class="campaign-card-header">
+                <h3>{{ c.business_name }}</h3>
+                {% set status = c.status %}
+                {% if status == 'generating' %}
+                    <span class="badge badge-info">Generating</span>
+                {% elif status == 'ready' %}
+                    <span class="badge badge-warning">Pending Review</span>
+                {% elif status == 'approved' %}
+                    <span class="badge badge-warning">Approved</span>
+                {% elif status == 'pushing' %}
+                    <span class="badge badge-info">Pushing Live...</span>
+                {% elif status == 'live' %}
+                    <span class="badge badge-success">Live</span>
+                {% elif status == 'partially_live' %}
+                    <span class="badge badge-warning">Partially Live</span>
+                {% elif status == 'push_failed' %}
+                    <span class="badge badge-error">Push Failed</span>
+                {% elif status == 'error' %}
+                    <span class="badge badge-error">Error</span>
+                {% else %}
+                    <span class="badge">{{ status }}</span>
+                {% endif %}
+            </div>
+            <p class="muted small">Budget: £{{ '%.0f'|format(c.monthly_budget) }}/mo · Created {{ c.created_at[:10] }}</p>
+            {% if c.error_message %}
+                <p class="error-text small">{{ c.error_message }}</p>
+            {% endif %}
+            <div class="campaign-card-actions">
+                {% if status == 'generating' %}
+                    <a href="{{ url_for('campaign_review', campaign_id=c.id) }}" class="btn btn-secondary btn-sm">View Progress</a>
+                {% elif status == 'ready' %}
+                    <a href="{{ url_for('campaign_review', campaign_id=c.id) }}" class="btn btn-primary btn-sm">Review &amp; Approve</a>
+                {% elif status == 'approved' %}
+                    <a href="{{ url_for('campaign_review', campaign_id=c.id) }}" class="btn btn-primary btn-sm">Push Live</a>
+                {% elif status == 'pushing' %}
+                    <a href="{{ url_for('campaign_pushing', campaign_id=c.id) }}" class="btn btn-secondary btn-sm">View Progress</a>
+                {% elif status in ('live', 'partially_live') %}
+                    <a href="{{ url_for('campaign_review', campaign_id=c.id) }}" class="btn btn-primary btn-sm">Set Up Ad Billing</a>
+                {% elif status == 'push_failed' %}
+                    <a href="{{ url_for('campaign_review', campaign_id=c.id) }}" class="btn btn-primary btn-sm">Retry Push</a>
+                {% elif status == 'error' %}
+                    <a href="{{ url_for('campaign_review', campaign_id=c.id) }}" class="btn btn-secondary btn-sm">View Error</a>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card empty-state">
+        <h2>No campaigns yet</h2>
+        <p class="muted">Create your first AI-powered ad campaign to get started.</p>
+        <a href="{{ url_for('onboarding') }}" class="btn btn-primary">Create First Campaign</a>
+    </div>
+{% endif %}
+{% endblock %}

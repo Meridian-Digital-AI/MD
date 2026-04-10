@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+{% block title %}Get Started - AdPilot AI{% endblock %}
+
+{% block content %}
+<div class="card" style="max-width: 640px; margin: 0 auto;">
+    {% if error %}
+    <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <div class="steps-indicator">
+        <div class="step-dot active" data-step="1"></div>
+        <div class="step-dot" data-step="2"></div>
+        <div class="step-dot" data-step="3"></div>
+        <div class="step-dot" data-step="4"></div>
+        <div class="step-dot" data-step="5"></div>
+        <div class="step-dot" data-step="6"></div>
+    </div>
+
+    <form method="POST" action="/onboarding" id="onboarding-form">
+        <!-- Step 1: Business Basics -->
+        <div class="step active" data-step="1">
+            <h2 class="step-title">Tell us about your business</h2>
+            <p class="step-subtitle">We'll use this to build your ad campaigns.</p>
+
+            <div class="form-group">
+                <label for="email">Your email address</label>
+                <input type="email" id="email" name="email" required placeholder="you@company.com" value="{{ prefill.email or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="business_name">Business name</label>
+                <input type="text" id="business_name" name="business_name" required placeholder="e.g. Aquablast Drain Services" value="{{ prefill.business_name or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="industry">Industry</label>
+                <input type="text" id="industry" name="industry" required placeholder="e.g. Plumbing & Drainage" value="{{ prefill.industry or '' }}">
+            </div>
+
+            <div class="step-nav">
+                <div></div>
+                <button type="button" class="btn btn-primary" onclick="nextStep(1)">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Location -->
+        <div class="step" data-step="2">
+            <h2 class="step-title">Where are you based?</h2>
+            <p class="step-subtitle">So we can target the right local audience.</p>
+
+            <div class="form-group">
+                <label for="location">Your business location</label>
+                <input type="text" id="location" name="location" required placeholder="e.g. Plymouth, South West England" value="{{ prefill.location or '' }}">
+            </div>
+            <div class="form-group">
+                <label for="service_area">Service area</label>
+                <input type="text" id="service_area" name="service_area" required placeholder="e.g. Plymouth, Exeter, Torquay, South Devon" value="{{ prefill.service_area or '' }}">
+                <p class="hint">List the towns/regions you serve, separated by commas</p>
+            </div>
+
+            <div class="step-nav">
+                <button type="button" class="btn btn-secondary" onclick="prevStep(2)">Back</button>
+                <button type="button" class="btn btn-primary" onclick="nextStep(2)">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Ad Platforms -->
+        <div class="step" data-step="3">
+            <h2 class="step-title">Where do you want to advertise?</h2>
+            <p class="step-subtitle">Choose which platforms to run your ads on.</p>
+
+            <div class="platform-choices">
+                <label class="platform-option">
+                    <input type="checkbox" name="platforms" value="google_ads"
+                        {{ 'checked' if not prefill or not prefill.platforms or 'google_ads' in (prefill.platforms or '') }}>
+                    <div class="platform-card">
+                        <strong>Google Ads</strong>
+                        <p>Show up when people search for your services. Best for capturing people who are actively looking for what you offer.</p>
+                    </div>
+                </label>
+                <label class="platform-option">
+                    <input type="checkbox" name="platforms" value="meta_ads"
+                        {{ 'checked' if not prefill or not prefill.platforms or 'meta_ads' in (prefill.platforms or '') }}>
+                    <div class="platform-card">
+                        <strong>Meta Ads</strong>
+                        <span style="font-size: 0.8rem; color: #888;">(Facebook &amp; Instagram)</span>
+                        <p>Reach people scrolling social media. Great for building awareness and trust with visual ads.</p>
+                    </div>
+                </label>
+            </div>
+            <p class="hint" style="margin-top: 0.75rem;">Select at least one platform. Choose both for maximum reach.</p>
+            <p id="platform-error" style="color: #dc2626; font-size: 0.85rem; display: none;">Please select at least one platform.</p>
+
+            <div class="step-nav">
+                <button type="button" class="btn btn-secondary" onclick="prevStep(3)">Back</button>
+                <button type="button" class="btn btn-primary" onclick="nextStep(3)">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Budget & Goal -->
+        <div class="step" data-step="4">
+            <h2 class="step-title">Budget & Goals</h2>
+            <p class="step-subtitle">How much you want to spend and what you want to achieve.</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="monthly_budget">Monthly ad budget (GBP)</label>
+                    <input type="number" id="monthly_budget" name="monthly_budget" required min="100" step="50" placeholder="e.g. 500" value="{{ prefill.monthly_budget or '' }}">
+                    <p class="hint">This is your ad spend, separate from the subscription fee</p>
+                </div>
+                <div class="form-group">
+                    <label for="goal">Primary goal</label>
+                    <select id="goal" name="goal" required>
+                        <option value="">Select a goal</option>
+                        <option value="leads" {{ 'selected' if prefill.goal == 'leads' }}>Generate leads</option>
+                        <option value="sales" {{ 'selected' if prefill.goal == 'sales' }}>Drive sales</option>
+                        <option value="awareness" {{ 'selected' if prefill.goal == 'awareness' }}>Build brand awareness</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="step-nav">
+                <button type="button" class="btn btn-secondary" onclick="prevStep(4)">Back</button>
+                <button type="button" class="btn btn-primary" onclick="nextStep(4)">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 5: USPs & Audience -->
+        <div class="step" data-step="5">
+            <h2 class="step-title">What makes you different?</h2>
+            <p class="step-subtitle">Your selling points and who you want to reach.</p>
+
+            <div class="form-group">
+                <label for="usps">Unique selling points</label>
+                <textarea id="usps" name="usps" required placeholder="e.g. 24/7 emergency service, No call-out fee, 10 years experience">{{ prefill.usps or '' }}</textarea>
+                <p class="hint">Separate each selling point with a comma</p>
+            </div>
+            <div class="form-group">
+                <label for="target_audience">Target audience</label>
+                <textarea id="target_audience" name="target_audience" required placeholder="e.g. Homeowners aged 30-65 in Plymouth with drainage problems">{{ prefill.target_audience or '' }}</textarea>
+            </div>
+
+            <div class="step-nav">
+                <button type="button" class="btn btn-secondary" onclick="prevStep(5)">Back</button>
+                <button type="button" class="btn btn-primary" onclick="nextStep(5)">Next</button>
+            </div>
+        </div>
+
+        <!-- Step 6: Optional & Submit -->
+        <div class="step" data-step="6">
+            <h2 class="step-title">Almost done</h2>
+            <p class="step-subtitle">Add your website and phone if you have them.</p>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="website_url">Website (optional)</label>
+                    <input type="url" id="website_url" name="website_url" placeholder="https://www.example.com" value="{{ prefill.website_url or '' }}">
+                </div>
+                <div class="form-group">
+                    <label for="phone_number">Phone (optional)</label>
+                    <input type="tel" id="phone_number" name="phone_number" placeholder="e.g. 01234 567890" value="{{ prefill.phone_number or '' }}">
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="additional_context">Anything else we should know? (optional)</label>
+                <textarea id="additional_context" name="additional_context" placeholder="e.g. We compete mainly against large national firms">{{ prefill.additional_context or '' }}</textarea>
+            </div>
+
+            <div class="step-nav">
+                <button type="button" class="btn btn-secondary" onclick="prevStep(6)">Back</button>
+                <button type="submit" class="btn btn-success">Continue to Pricing</button>
+            </div>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const totalSteps = 6;
+
+    function showStep(n) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.querySelector(`.step[data-step="${n}"]`).classList.add('active');
+
+        document.querySelectorAll('.step-dot').forEach((dot, i) => {
+            dot.classList.remove('active', 'done');
+            if (i + 1 === n) dot.classList.add('active');
+            else if (i + 1 < n) dot.classList.add('done');
+        });
+    }
+
+    function validateStep(n) {
+        // Platform step: at least one checkbox must be checked
+        if (n === 3) {
+            const checked = document.querySelectorAll('input[name="platforms"]:checked');
+            const errEl = document.getElementById('platform-error');
+            if (checked.length === 0) {
+                errEl.style.display = 'block';
+                return false;
+            }
+            errEl.style.display = 'none';
+            return true;
+        }
+
+        const step = document.querySelector(`.step[data-step="${n}"]`);
+        const inputs = step.querySelectorAll('[required]');
+        for (const input of inputs) {
+            if (!input.value.trim()) {
+                input.focus();
+                input.style.borderColor = '#dc2626';
+                setTimeout(() => input.style.borderColor = '', 2000);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    function nextStep(current) {
+        if (!validateStep(current)) return;
+        if (current < totalSteps) showStep(current + 1);
+    }
+
+    function prevStep(current) {
+        if (current > 1) showStep(current - 1);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Generating Your Campaign - AdPilot AI{% endblock %}
+
+{% block content %}
+<div class="card generating">
+    <div class="spinner"></div>
+    <h2>Building your campaign</h2>
+    <p>Our AI is crafting your ad campaigns.</p>
+    <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #999;">This usually takes 30-60 seconds.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const campaignId = {{ campaign_id }};
+    const pollInterval = setInterval(async () => {
+        try {
+            const res = await fetch(`/campaign/${campaignId}/status`);
+            const data = await res.json();
+            if (data.status === 'ready') {
+                clearInterval(pollInterval);
+                window.location.href = `/campaign/${campaignId}`;
+            } else if (data.status === 'error') {
+                clearInterval(pollInterval);
+                document.querySelector('.generating').innerHTML = `
+                    <h2>Something went wrong</h2>
+                    <p style="color: #dc2626; margin-bottom: 1rem;">${data.error || 'Campaign generation failed.'}</p>
+                    <form method="POST" action="/campaign/${campaignId}/retry">
+                        <button type="submit" class="btn btn-primary">Try Again</button>
+                    </form>
+                `;
+            }
+        } catch (e) {}
+    }, 5000);
+</script>
+{% endblock %}

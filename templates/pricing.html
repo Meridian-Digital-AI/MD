@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Choose Your Plan - AdPilot AI{% endblock %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 1rem;">
+    <h1>Choose your plan</h1>
+    <p style="color: #666;">All plans include AI-powered campaign creation. Cancel anytime.</p>
+</div>
+
+<div class="pricing-grid">
+    {% for key, plan in plans.items() %}
+    <div class="pricing-card {{ 'popular' if plan.get('popular') }}">
+        {% if plan.get('popular') %}
+        <div class="badge">Most Popular</div>
+        {% endif %}
+        <h3>{{ plan.name }}</h3>
+        <div class="price">&pound;{{ plan.price }}<span>/mo</span></div>
+        <ul>
+            {% for feature in plan.features %}
+            <li>{{ feature }}</li>
+            {% endfor %}
+        </ul>
+        <form method="POST" action="/checkout">
+            <input type="hidden" name="plan" value="{{ key }}">
+            <button type="submit" class="btn {{ 'btn-primary' if plan.get('popular') else 'btn-secondary' }} btn-full">
+                Choose {{ plan.name }}
+            </button>
+        </form>
+    </div>
+    {% endfor %}
+</div>
+
+<div style="text-align: center; margin-top: 1rem;">
+    <p style="color: #888; font-size: 0.85rem;">
+        Your ad spend budget is separate and goes directly to Google/Meta.
+    </p>
+    <!-- Demo mode: skip Stripe for testing -->
+    <form method="POST" action="/demo/generate" style="margin-top: 1.5rem;">
+        <button type="submit" class="btn btn-secondary" style="font-size: 0.85rem;">
+            Skip payment (demo mode)
+        </button>
+    </form>
+</div>
+{% endblock %}

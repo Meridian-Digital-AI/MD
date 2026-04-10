@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Pushing Live - Meridian Digital{% endblock %}
+
+{% block content %}
+<div class="card generating" id="push-card">
+    <div class="spinner"></div>
+    <h2>Pushing your campaigns live</h2>
+    <p>We're setting up your ads right now.</p>
+
+    <div class="push-status-grid" style="margin-top: 1.5rem;">
+        {% if 'google_ads' in platforms %}
+        <div class="push-status-item" id="google-status">
+            <strong>Google Ads:</strong> <span class="badge badge-info">Pushing...</span>
+        </div>
+        {% endif %}
+        {% if 'meta_ads' in platforms %}
+        <div class="push-status-item" id="meta-status">
+            <strong>Meta Ads:</strong> <span class="badge badge-info">Pushing...</span>
+        </div>
+        {% endif %}
+    </div>
+
+    <p style="margin-top: 1rem; font-size: 0.85rem; color: #999;">This usually takes 10-30 seconds.</p>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const campaignId = {{ campaign_id }};
+    const badgeHTML = {
+        'pending': '<span class="badge">Pending</span>',
+        'pushing': '<span class="badge badge-info">Pushing...</span>',
+        'live': '<span class="badge badge-success">Live</span>',
+        'failed': '<span class="badge badge-error">Failed</span>',
+    };
+
+    const pollInterval = setInterval(async () => {
+        try {
+            const res = await fetch(`/campaign/${campaignId}/push-status`);
+            const data = await res.json();
+
+            const gEl = document.getElementById('google-status');
+            const mEl = document.getElementById('meta-status');
+            if (gEl && badgeHTML[data.google_push_status]) {
+                gEl.innerHTML = '<strong>Google Ads:</strong> ' + badgeHTML[data.google_push_status];
+            }
+            if (mEl && badgeHTML[data.meta_push_status]) {
+                mEl.innerHTML = '<strong>Meta Ads:</strong> ' + badgeHTML[data.meta_push_status];
+            }
+
+            if (data.status === 'live' || data.status === 'partially_live') {
+                clearInterval(pollInterval);
+                document.querySelector('.spinner').style.display = 'none';
+                document.querySelector('#push-card h2').textContent = 'Campaigns are set up!';
+                document.querySelector('#push-card p').innerHTML =
+                    '<p style="color:#6b7280;margin-bottom:1rem;">Now set up your ad spend billing to start running your ads.</p>' +
+                    '<a href="/campaign/' + campaignId + '" class="btn btn-primary" style="margin-top:0.5rem;">Set Up Billing</a>';
+            } else if (data.status === 'push_failed') {
+                clearInterval(pollInterval);
+                document.querySelector('.spinner').style.display = 'none';
+                document.querySelector('#push-card h2').textContent = 'Push failed';
+                document.querySelector('#push-card p').innerHTML =
+                    'Something went wrong. <a href="/dashboard" class="btn btn-secondary" style="margin-top:1rem;">Back to Dashboard</a>';
+            }
+        } catch (e) {}
+    }, 3000);
+</script>
+{% endblock %}

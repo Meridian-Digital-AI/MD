@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Error - AdPilot AI{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align: center; padding: 3rem 2rem;">
+    <h2 style="margin-bottom: 0.75rem;">Something went wrong</h2>
+    <p style="color: #dc2626; margin-bottom: 1.5rem;">{{ error }}</p>
+    <form method="POST" action="/campaign/{{ campaign_id }}/retry">
+        <button type="submit" class="btn btn-primary">Try Again</button>
+    </form>
+</div>
+{% endblock %}

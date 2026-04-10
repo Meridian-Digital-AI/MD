@@ -1,0 +1,270 @@
+{% extends "base.html" %}
+{% block title %}Review Campaign - AdPilot AI{% endblock %}
+
+{% block content %}
+<div class="campaign-header">
+    <h1>Campaign: {{ campaign.business_name }}</h1>
+    {% if campaign_status == 'live' %}
+        <span class="badge badge-success">Live</span>
+    {% elif campaign_status == 'partially_live' %}
+        <span class="badge badge-warning">Partially Live</span>
+    {% elif campaign_status == 'approved' %}
+        <span class="badge badge-warning">Approved — Ready to Push</span>
+    {% elif campaign_status == 'push_failed' %}
+        <span class="badge badge-error">Push Failed</span>
+    {% else %}
+        <span class="badge badge-warning">Pending Review</span>
+    {% endif %}
+</div>
+
+<!-- Strategy -->
+<div class="card">
+    <h2 style="margin-bottom: 0.75rem;">Strategy Overview</h2>
+    <p>{{ campaign.strategy_notes }}</p>
+    <p style="margin-top: 1rem;"><strong>Estimated Monthly Leads:</strong> {{ campaign.estimated_monthly_leads }}</p>
+</div>
+
+<!-- Google Ads -->
+{% if campaign.google_ads %}
+{% set g = campaign.google_ads %}
+<div class="card platform-section">
+    <h2>Google Ads &mdash; {{ g.campaign_name }}</h2>
+    <p style="color: #666; margin-bottom: 1rem;">
+        Daily Budget: &pound;{{ g.daily_budget_gbp }} |
+        Bidding: {{ g.bidding_strategy }} |
+        Locations: {{ g.location_targeting | join(', ') }}
+    </p>
+
+    <!-- Ad Groups -->
+    {% for group in g.ad_groups %}
+    <div class="ad-group">
+        <h3>{{ group.name }}</h3>
+        <p style="font-size: 0.9rem; color: #666;">{{ group.theme }}</p>
+
+        <div style="margin-top: 0.5rem;">
+            <span class="label" style="font-size: 0.8rem; font-weight: 600; color: #888;">Keywords:</span>
+            <div class="keyword-list">
+                {% for kw in group.keywords %}
+                <span class="keyword">[{{ kw.match_type }}] {{ kw.keyword }}</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        {% if group.negative_keywords %}
+        <div style="margin-top: 0.5rem;">
+            <span style="font-size: 0.8rem; font-weight: 600; color: #888;">Negative Keywords:</span>
+            <div class="keyword-list">
+                {% for nk in group.negative_keywords %}
+                <span class="keyword" style="background: #fef2f2; color: #dc2626;">{{ nk }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Ads -->
+    <h3 style="margin-top: 1.5rem; margin-bottom: 0.75rem;">Ad Previews</h3>
+    {% for ad in g.ads %}
+    <div class="ad-preview">
+        <div style="font-size: 0.75rem; color: #888; margin-bottom: 0.3rem;">{{ ad.ad_group }}</div>
+        {% for h in ad.headlines[:3] %}
+        <span class="headline">{{ h }}{% if not loop.last %} | {% endif %}</span>
+        {% endfor %}
+        {% if g.location_targeting %}
+        <div class="url">www.example.com</div>
+        {% endif %}
+        {% for d in ad.descriptions[:2] %}
+        <div class="desc">{{ d }}</div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+
+    <!-- Extensions -->
+    <h3 style="margin-top: 1.5rem; margin-bottom: 0.5rem;">Callout Extensions</h3>
+    <div class="callouts">
+        {% for c in g.callout_extensions %}
+        <span class="callout">{{ c }}</span>
+        {% endfor %}
+    </div>
+
+    {% if g.sitelink_extensions %}
+    <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;">Sitelink Extensions</h3>
+    {% for sl in g.sitelink_extensions %}
+    <div style="margin-bottom: 0.5rem; font-size: 0.9rem;">
+        <strong style="color: #1a0dab;">{{ sl.link_text }}</strong>
+        <span style="color: #666;"> &mdash; {{ sl.final_url_path }}</span><br>
+        <span style="color: #888; font-size: 0.8rem;">{{ sl.description_1 }} | {{ sl.description_2 }}</span>
+    </div>
+    {% endfor %}
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Meta Ads -->
+{% if campaign.meta_ads %}
+{% set m = campaign.meta_ads %}
+<div class="card platform-section">
+    <h2>Meta Ads &mdash; {{ m.campaign_name }}</h2>
+    <p style="color: #666; margin-bottom: 1rem;">
+        Objective: {{ m.campaign_objective }} |
+        Daily Budget: &pound;{{ m.daily_budget_gbp }}
+    </p>
+
+    <!-- Audience -->
+    <div style="margin-bottom: 1.5rem;">
+        <h3 style="margin-bottom: 0.5rem;">Audience Targeting</h3>
+        <p style="font-size: 0.9rem;">
+            <strong>Ages:</strong> {{ m.audience.age_min }}&ndash;{{ m.audience.age_max }} |
+            <strong>Gender:</strong> {{ m.audience.genders }}
+        </p>
+        <p style="font-size: 0.9rem;"><strong>Interests:</strong> {{ m.audience.interests | join(', ') }}</p>
+        {% if m.audience.behaviours %}
+        <p style="font-size: 0.9rem;"><strong>Behaviours:</strong> {{ m.audience.behaviours | join(', ') }}</p>
+        {% endif %}
+        <p style="font-size: 0.9rem;"><strong>Locations:</strong> {{ m.audience.locations | join(', ') }}</p>
+        {% if m.audience.lookalike_suggestion %}
+        <p style="font-size: 0.9rem;"><strong>Lookalike:</strong> {{ m.audience.lookalike_suggestion }}</p>
+        {% endif %}
+    </div>
+
+    <!-- Ads -->
+    <h3 style="margin-bottom: 0.75rem;">Ad Variations</h3>
+    {% for ad in m.ads %}
+    <div class="meta-ad">
+        <h4>{{ ad.ad_name }}</h4>
+        <p><span class="label">Format:</span> {{ ad.ad_format | replace('_', ' ') | title }} |
+           <span class="label">CTA:</span> {{ ad.call_to_action }}</p>
+        <p style="margin-top: 0.5rem;"><span class="label">Primary Text:</span><br>{{ ad.primary_text }}</p>
+        <p><span class="label">Headline:</span> {{ ad.headline }}</p>
+        <p><span class="label">Description:</span> {{ ad.description }}</p>
+        {% if ad.visual_brief %}
+        <p style="margin-top: 0.5rem; font-size: 0.85rem; color: #888;"><span class="label">Visual Brief:</span> {{ ad.visual_brief }}</p>
+        {% endif %}
+    </div>
+    {% endfor %}
+
+    <!-- Placements -->
+    {% if m.placement_recommendations %}
+    <h3 style="margin-top: 1rem; margin-bottom: 0.5rem;">Recommended Placements</h3>
+    <ul style="padding-left: 1.2rem; font-size: 0.9rem; color: #555;">
+        {% for p in m.placement_recommendations %}
+        <li>{{ p }}</li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Ad Preview Link -->
+{% if campaign.meta_ads %}
+<div style="text-align: center; margin-bottom: 1.5rem;">
+    <a href="/campaign/{{ campaign_id }}/ad-preview" class="btn btn-secondary">
+        Preview Meta Ads Creatives
+    </a>
+</div>
+{% endif %}
+
+<!-- Actions -->
+{% if campaign_status in ('ready', none) %}
+<div class="card" style="text-align: center;">
+    <p style="margin-bottom: 1rem; font-size: 1.05rem;">Happy with this campaign?</p>
+    <form method="POST" action="/campaign/{{ campaign_id }}/approve" style="display: inline;">
+        <button type="submit" class="btn btn-success" style="font-size: 1.1rem; padding: 0.9rem 2.5rem;">
+            Approve Campaign
+        </button>
+    </form>
+    <p style="margin-top: 0.75rem; font-size: 0.85rem; color: #888;">
+        Once approved, you can push your campaigns live.
+    </p>
+</div>
+
+{% elif campaign_status == 'approved' %}
+<div class="card" style="text-align: center;">
+    <p style="margin-bottom: 1rem; font-size: 1.05rem;">Campaign approved! Ready to go live?</p>
+    <form method="POST" action="/campaign/{{ campaign_id }}/push" style="display: inline;">
+        <button type="submit" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.9rem 2.5rem;">
+            Push Live{% if campaign.google_ads and campaign.meta_ads %} to Google &amp; Meta{% elif campaign.google_ads %} to Google Ads{% elif campaign.meta_ads %} to Meta Ads{% endif %}
+        </button>
+    </form>
+    <p style="margin-top: 0.75rem; font-size: 0.85rem; color: #888;">
+        Campaigns will be created as paused — enable them in each platform when ready.
+    </p>
+</div>
+
+{% elif campaign_status in ('live', 'partially_live') %}
+<div class="card" style="text-align: center;">
+    <p style="margin-bottom: 0.75rem; font-size: 1.15rem; font-weight: 600;">Your campaigns are set up and ready!</p>
+    <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+        {% if campaign.google_ads and google_campaign_id %}
+        <div class="badge badge-success">Google Ads: {{ google_campaign_id }}</div>
+        {% endif %}
+        {% if campaign.meta_ads and meta_campaign_id %}
+        <div class="badge badge-success">Meta Ads: {{ meta_campaign_id }}</div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="card billing-guide">
+    <h2 style="margin-bottom: 0.5rem;">Set up your ad spend billing</h2>
+    <p class="muted" style="margin-bottom: 1.5rem;">Your campaigns are created but paused. To start running ads, add your payment method to each platform. You pay the ad platforms directly for your ad spend — no markup from us.</p>
+
+    <div class="billing-steps">
+        {% if campaign.google_ads %}
+        <div class="billing-step">
+            <div class="billing-step-header">
+                <span class="billing-step-num">1</span>
+                <h3>Google Ads — Add payment</h3>
+            </div>
+            <ol class="billing-instructions">
+                <li>Go to <strong>ads.google.com</strong> and sign in with your email</li>
+                <li>If prompted, accept the invitation to manage your ad account</li>
+                <li>Click the <strong>Tools</strong> icon (spanner) in the top menu</li>
+                <li>Under "Billing", click <strong>Billing settings</strong></li>
+                <li>Click <strong>Add payment method</strong> and enter your card details</li>
+                <li>Once payment is added, go to <strong>Campaigns</strong> and click <strong>Enable</strong> on your campaign</li>
+            </ol>
+            <p class="billing-budget-note">Your daily budget is set to <strong>£{{ campaign.google_ads.daily_budget_gbp }}/day</strong> (~£{{ '%.0f'|format(campaign.google_ads.daily_budget_gbp * 30) }}/month). You can adjust this anytime in Google Ads.</p>
+        </div>
+        {% endif %}
+
+        {% if campaign.meta_ads %}
+        <div class="billing-step">
+            <div class="billing-step-header">
+                <span class="billing-step-num">{{ 2 if campaign.google_ads else 1 }}</span>
+                <h3>Meta Ads — Add payment</h3>
+            </div>
+            <ol class="billing-instructions">
+                <li>Go to <strong>business.facebook.com</strong> and sign in</li>
+                <li>Navigate to <strong>Business Settings</strong> &rarr; <strong>Payment methods</strong></li>
+                <li>Click <strong>Add payment method</strong> and enter your card details</li>
+                <li>Then go to <strong>Ads Manager</strong> (adsmanager.facebook.com)</li>
+                <li>Find your campaign and toggle it from <strong>Off</strong> to <strong>On</strong></li>
+            </ol>
+            <p class="billing-budget-note">Your daily budget is set to <strong>£{{ campaign.meta_ads.daily_budget_gbp }}/day</strong> (~£{{ '%.0f'|format(campaign.meta_ads.daily_budget_gbp * 30) }}/month). You can adjust this anytime in Meta Ads Manager.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <div style="background: #f0fdf4; border-radius: 8px; padding: 1rem 1.25rem; margin-top: 1.5rem;">
+        <p style="font-size: 0.9rem; color: #166534; margin: 0;">
+            <strong>Need help?</strong> Reply to your welcome email or contact us and we'll walk you through the setup. We can also do a screen share to get your ads running.
+        </p>
+    </div>
+</div>
+
+<div class="card" style="text-align: center;">
+    <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">Back to Dashboard</a>
+</div>
+
+{% elif campaign_status == 'push_failed' %}
+<div class="card" style="text-align: center;">
+    <p style="margin-bottom: 1rem; font-size: 1.05rem; color: #dc2626;">Push failed. Try again?</p>
+    <form method="POST" action="/campaign/{{ campaign_id }}/push" style="display: inline;">
+        <button type="submit" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.9rem 2.5rem;">
+            Retry Push
+        </button>
+    </form>
+</div>
+{% endif %}
+{% endblock %}

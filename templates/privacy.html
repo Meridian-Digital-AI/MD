@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy - Meridian Digital{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <h1>Privacy Policy</h1>
+    <p class="legal-meta">Last updated: {{ last_updated }}</p>
+
+    <p>
+        This Privacy Policy describes how Meridian Digital ("we", "us", "our") collects, uses,
+        and protects personal data when you use our website and ad-management service
+        (the "Service"). We are based in the United Kingdom and we comply with the
+        UK GDPR and the Data Protection Act 2018.
+    </p>
+
+    <h2>1. Who we are</h2>
+    <p>
+        Meridian Digital is the data controller for the personal data described in this policy.
+        If you have any questions about this policy or your data, contact us at
+        <a href="mailto:hello@meridiandigital.co.uk">hello@meridiandigital.co.uk</a>.
+    </p>
+
+    <h2>2. What data we collect</h2>
+    <p>When you use the Service, we collect the following categories of personal data:</p>
+    <ul>
+        <li><strong>Account data:</strong> your email address and a session token used to keep you signed in.</li>
+        <li><strong>Business information you provide:</strong> business name, industry, location, service area, monthly ad budget, marketing goal, unique selling points, target audience description, and (optionally) website URL, phone number, and additional context.</li>
+        <li><strong>Ad campaigns generated for you:</strong> AI-generated Google Ads and Meta Ads campaign drafts based on the business information you submit.</li>
+        <li><strong>Billing data:</strong> we use Stripe to process payments. We do not store your full card details on our servers — Stripe handles that. We do store a Stripe customer ID and your subscription plan.</li>
+        <li><strong>Technical data:</strong> basic server logs (IP address, request paths, timestamps) used for debugging and abuse prevention.</li>
+    </ul>
+
+    <h2>3. How we use your data</h2>
+    <p>We use your personal data to:</p>
+    <ul>
+        <li>Provide the Service — generate ad campaigns, push them to Google Ads and Meta Ads on your behalf, and let you review and approve them.</li>
+        <li>Take payment via Stripe and manage your subscription.</li>
+        <li>Send you transactional emails (welcome, "your campaign is ready", "campaign approved").</li>
+        <li>Comply with legal obligations and respond to lawful requests.</li>
+        <li>Detect and prevent fraud, abuse, and security incidents.</li>
+    </ul>
+
+    <h2>4. Legal basis for processing</h2>
+    <p>We rely on the following legal bases under UK GDPR:</p>
+    <ul>
+        <li><strong>Performance of a contract</strong> — to deliver the Service you signed up for.</li>
+        <li><strong>Legitimate interests</strong> — to keep the Service secure, prevent abuse, and improve it.</li>
+        <li><strong>Legal obligation</strong> — to keep accounting and tax records.</li>
+        <li><strong>Consent</strong> — where required, e.g. for non-essential cookies.</li>
+    </ul>
+
+    <h2>5. Sharing your data</h2>
+    <p>We share data only with the third-party processors needed to run the Service:</p>
+    <ul>
+        <li><strong>Stripe</strong> — payment processing.</li>
+        <li><strong>Anthropic</strong> — generates the campaign drafts from your business information using the Claude API.</li>
+        <li><strong>Google (Google Ads API)</strong> — to push approved campaigns to your Google Ads account.</li>
+        <li><strong>Meta (Marketing API)</strong> — to push approved campaigns to your Meta Ads account.</li>
+        <li><strong>Resend</strong> — to send transactional emails.</li>
+        <li><strong>Our hosting provider</strong> — to operate the servers that run the Service.</li>
+    </ul>
+    <p>
+        We do not sell your personal data and we do not share it with third parties for
+        their own marketing.
+    </p>
+
+    <h2>6. International transfers</h2>
+    <p>
+        Some of the processors above are based outside the UK (for example in the EU or US).
+        Where data is transferred internationally, we rely on the safeguards required by
+        UK GDPR (such as the UK International Data Transfer Agreement or adequacy decisions).
+    </p>
+
+    <h2>7. How long we keep your data</h2>
+    <p>
+        We keep account data and campaign drafts for as long as your account is active and
+        for a reasonable period afterwards to handle support requests, disputes, and legal
+        obligations. Billing records are kept for at least six years to comply with UK tax law.
+        You can ask us to delete your account at any time.
+    </p>
+
+    <h2>8. Your rights</h2>
+    <p>Under UK GDPR you have the right to:</p>
+    <ul>
+        <li>Access the personal data we hold about you.</li>
+        <li>Correct inaccurate data.</li>
+        <li>Request deletion of your data ("right to be forgotten").</li>
+        <li>Restrict or object to our processing.</li>
+        <li>Receive your data in a portable format.</li>
+        <li>Withdraw consent where we rely on it.</li>
+        <li>Lodge a complaint with the Information Commissioner's Office (ICO) at <a href="https://ico.org.uk/">ico.org.uk</a>.</li>
+    </ul>
+    <p>
+        To exercise any of these rights, email
+        <a href="mailto:hello@meridiandigital.co.uk">hello@meridiandigital.co.uk</a>.
+    </p>
+
+    <h2>9. Cookies</h2>
+    <p>
+        We set a single first-party session cookie (<code>session_token</code>) so we can
+        keep you signed in. This cookie is strictly necessary for the Service to function
+        and does not require consent under PECR. We do not use third-party advertising or
+        tracking cookies on our own site.
+    </p>
+
+    <h2>10. Security</h2>
+    <p>
+        We protect your data using HTTPS in transit, access controls, and standard
+        security practices. No internet service can be guaranteed 100% secure, but we take
+        the protection of your data seriously and notify users and the ICO of any breach
+        as required by law.
+    </p>
+
+    <h2>11. Changes to this policy</h2>
+    <p>
+        We may update this Privacy Policy from time to time. The "Last updated" date at
+        the top will reflect the most recent change. Material changes will be communicated
+        to you by email or via a notice in the Service.
+    </p>
+
+    <h2>12. Contact</h2>
+    <p>
+        Questions about this policy or how we handle your data?
+        Email <a href="mailto:hello@meridiandigital.co.uk">hello@meridiandigital.co.uk</a>.
+    </p>
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@
 import os
 import json
 import threading
+from datetime import date
 from functools import wraps
 from dotenv import load_dotenv
 
@@ -22,6 +23,10 @@ from campaign_builder import build_campaign
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "dev-secret-change-me")
 
+MARKETING_SITE_URL = os.environ.get(
+    "MARKETING_SITE_URL", "https://meridiandigital.co.uk"
+)
+
 
 # ─── Session helper ───────────────────────────────────────────────────────────
 
@@ -35,6 +40,16 @@ def get_current_customer():
 @app.context_processor
 def inject_current_customer():
     return {"current_customer": get_current_customer()}
+
+
+@app.context_processor
+def inject_current_year():
+    return {"current_year": date.today().year}
+
+
+@app.context_processor
+def inject_marketing_site_url():
+    return {"marketing_site_url": MARKETING_SITE_URL}
 
 
 def require_session(f):
@@ -403,6 +418,21 @@ def logout():
     resp = make_response(redirect(url_for("login")))
     resp.delete_cookie("session_token")
     return resp
+
+
+# ─── Legal pages ─────────────────────────────────────────────────────────────
+
+LEGAL_LAST_UPDATED = "10 April 2026"
+
+
+@app.route("/privacy")
+def privacy():
+    return render_template("privacy.html", last_updated=LEGAL_LAST_UPDATED)
+
+
+@app.route("/terms")
+def terms():
+    return render_template("terms.html", last_updated=LEGAL_LAST_UPDATED)
 
 
 # ─── Demo mode (skip Stripe for testing) ─────────────────────────────────────

@@ -1,0 +1,159 @@
+{% extends "base.html" %}
+{% block title %}Terms of Service - Meridian Digital{% endblock %}
+
+{% block content %}
+<div class="legal-page">
+    <h1>Terms of Service</h1>
+    <p class="legal-meta">Last updated: {{ last_updated }}</p>
+
+    <p>
+        These Terms of Service ("Terms") govern your access to and use of the Meridian Digital
+        website and ad-management service (the "Service"). By signing up for or using the
+        Service, you agree to be bound by these Terms. If you do not agree, please do not
+        use the Service.
+    </p>
+
+    <h2>1. Who we are</h2>
+    <p>
+        The Service is provided by Meridian Digital, based in the United Kingdom.
+        References to "we", "us", and "our" mean Meridian Digital. References to "you"
+        and "your" mean the individual or business entity using the Service.
+    </p>
+
+    <h2>2. The Service</h2>
+    <p>
+        Meridian Digital uses AI to generate Google Ads and Meta Ads campaign drafts based
+        on the business information you provide. With your approval, we push approved
+        campaigns to your Google Ads and Meta Ads accounts via the official platform APIs.
+    </p>
+    <p>
+        Campaigns are created in a <strong>paused</strong> state. You are responsible for
+        reviewing them, enabling them, and adding payment methods directly with Google
+        and Meta to start ad spend. <strong>Ad spend is paid by you directly to Google and
+        Meta — we do not mark up or take a cut of your ad budget.</strong>
+    </p>
+
+    <h2>3. Account and eligibility</h2>
+    <p>
+        You must be at least 18 years old and legally able to enter into a contract.
+        You are responsible for keeping your account credentials secure and for all
+        activity that occurs under your account. Notify us immediately if you suspect
+        unauthorised access.
+    </p>
+
+    <h2>4. Subscriptions and payment</h2>
+    <p>
+        The Service is offered on a monthly subscription basis. Pricing is shown on
+        our pricing page and may change with reasonable notice. Payments are processed
+        by Stripe. By subscribing, you authorise us (via Stripe) to charge your chosen
+        payment method on a recurring monthly basis until you cancel.
+    </p>
+    <p>
+        You can cancel your subscription at any time from your dashboard or by emailing
+        us. Cancellation takes effect at the end of your current billing period;
+        we do not provide pro-rated refunds for partial months unless required by law.
+    </p>
+
+    <h2>5. Your responsibilities</h2>
+    <p>You agree that:</p>
+    <ul>
+        <li>The business information you provide is accurate and you are authorised to provide it.</li>
+        <li>You will not use the Service to advertise unlawful, deceptive, or prohibited goods or services.</li>
+        <li>Your ads will comply with the policies of Google Ads, Meta Ads, and applicable advertising and consumer-protection laws.</li>
+        <li>You will not attempt to disrupt, reverse-engineer, or abuse the Service or its underlying APIs.</li>
+        <li>You will keep your linked Google Ads and Meta Ads accounts in good standing.</li>
+    </ul>
+
+    <h2>6. AI-generated content</h2>
+    <p>
+        Campaigns are drafted by an AI model (Anthropic's Claude). AI output can contain
+        errors, inaccuracies, or material that is not appropriate for your business.
+        <strong>You are responsible for reviewing every campaign before approving it</strong>
+        and you remain responsible for the ads that run on your accounts.
+    </p>
+
+    <h2>7. Third-party platforms</h2>
+    <p>
+        The Service depends on third-party platforms including Google Ads, Meta Ads,
+        Anthropic, Stripe, and Resend. We are not responsible for outages, policy changes,
+        account suspensions, billing decisions, or other actions taken by those platforms.
+        Your use of those platforms is subject to their own terms.
+    </p>
+
+    <h2>8. Intellectual property</h2>
+    <p>
+        We retain all rights in the Service itself, including the website, code, AI prompts,
+        and brand. You retain ownership of the business information you submit and of the
+        ad creative produced from it. By submitting content to the Service, you grant us
+        a non-exclusive licence to process it as needed to provide the Service.
+    </p>
+
+    <h2>9. Acceptable use</h2>
+    <p>You may not use the Service to:</p>
+    <ul>
+        <li>Advertise illegal goods or services, scams, or material that infringes others' rights.</li>
+        <li>Submit false or misleading business information.</li>
+        <li>Send spam, harass others, or violate anti-discrimination laws.</li>
+        <li>Probe, scan, or attempt to breach the security of the Service.</li>
+        <li>Resell or sublicense the Service without our written permission.</li>
+    </ul>
+    <p>
+        We may suspend or terminate accounts that breach these rules.
+    </p>
+
+    <h2>10. Disclaimers</h2>
+    <p>
+        The Service is provided "as is" and "as available". We make no guarantees about
+        the performance, ROI, lead volume, or conversion rate of any campaign generated
+        or pushed by the Service. Estimates of "monthly leads" are approximations
+        provided for guidance only and are not promises.
+    </p>
+    <p>
+        To the maximum extent permitted by law, we disclaim all implied warranties of
+        merchantability, fitness for a particular purpose, and non-infringement.
+    </p>
+
+    <h2>11. Limitation of liability</h2>
+    <p>
+        To the maximum extent permitted by law, our total liability to you for any claim
+        arising out of or relating to the Service is limited to the amount you paid us in
+        the twelve (12) months immediately preceding the event giving rise to the claim.
+        We are not liable for indirect, incidental, consequential, or special damages,
+        loss of profits, loss of revenue, loss of data, or loss of goodwill.
+    </p>
+    <p>
+        Nothing in these Terms excludes liability that cannot be excluded under UK law,
+        including liability for death or personal injury caused by negligence, fraud, or
+        any matter for which it is unlawful to limit liability.
+    </p>
+
+    <h2>12. Termination</h2>
+    <p>
+        You can stop using the Service and cancel your subscription at any time. We can
+        suspend or terminate your account if you breach these Terms, if your continued
+        use poses a risk to us or other users, or if we are required to do so by law.
+        On termination, your access to the Service ends but ads already pushed to your
+        Google or Meta accounts remain under your control on those platforms.
+    </p>
+
+    <h2>13. Changes to these Terms</h2>
+    <p>
+        We may update these Terms from time to time. If we make material changes we will
+        notify you by email or a prominent notice in the Service. Continued use after the
+        updated Terms take effect means you accept them.
+    </p>
+
+    <h2>14. Governing law</h2>
+    <p>
+        These Terms are governed by the laws of England and Wales. Any dispute arising
+        out of or relating to these Terms or the Service is subject to the exclusive
+        jurisdiction of the courts of England and Wales.
+    </p>
+
+    <h2>15. Contact</h2>
+    <p>
+        Questions about these Terms? Email
+        <a href="mailto:hello@meridiandigital.co.uk">hello@meridiandigital.co.uk</a>.
+    </p>
+</div>
+{% endblock %}

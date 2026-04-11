@@ -3,16 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}AdPilot AI{% endblock %}</title>
+    <title>{% block title %}Meridian Digital{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Sora:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     {% block head %}{% endblock %}
 </head>
 <body>
     <header class="topbar">
         <div class="container topbar-inner">
-            <a href="/" class="logo">Meridian <span>Digital</span></a>
+            <a href="{{ marketing_site_url }}" class="logo" target="_blank" rel="noopener" title="Visit Meridian Digital (opens in new tab)">Meridian <span>Digital</span></a>
             <nav class="topnav">
                 {% if current_customer %}
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
@@ -26,6 +27,16 @@
     <main class="container">
         {% block content %}{% endblock %}
     </main>
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <div class="footer-brand">© {{ current_year or 2026 }} Meridian Digital</div>
+            <nav class="footer-nav">
+                <a href="{{ url_for('privacy') }}">Privacy</a>
+                <a href="{{ url_for('terms') }}">Terms</a>
+                <a href="mailto:hello@meridiandigital.co.uk">Contact</a>
+            </nav>
+        </div>
+    </footer>
     {% block scripts %}{% endblock %}
 </body>
 </html>

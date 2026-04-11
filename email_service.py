@@ -6,7 +6,7 @@ Backends:
 
 Configure via env vars:
   EMAIL_BACKEND    = console | resend
-  FROM_EMAIL       = "AdPilot AI <noreply@adpilot.ai>"
+  FROM_EMAIL       = "Meridian Digital <noreply@meridiandigital.co.uk>"
   RESEND_API_KEY   = re_xxxxx (only needed for resend backend)
 """
 
@@ -16,7 +16,7 @@ import logging
 log = logging.getLogger(__name__)
 
 BACKEND = os.environ.get("EMAIL_BACKEND", "console").lower()
-FROM_EMAIL = os.environ.get("FROM_EMAIL", "AdPilot AI <noreply@adpilot.ai>")
+FROM_EMAIL = os.environ.get("FROM_EMAIL", "Meridian Digital <noreply@meridiandigital.co.uk>")
 APP_URL = os.environ.get("APP_URL", "http://localhost:5000")
 
 
@@ -63,18 +63,18 @@ def _send_resend(to: str, subject: str, html: str, text: str) -> bool:
 # ─── Email templates ─────────────────────────────────────────────────────────
 
 def send_welcome(to: str, business_name: str) -> bool:
-    subject = "Welcome to AdPilot AI — your campaign is coming"
+    subject = "Welcome to Meridian Digital — your campaign is coming"
     text = (
         f"Hi {business_name},\n\n"
-        f"Thanks for signing up to AdPilot AI! We're building your Google Ads "
+        f"Thanks for signing up to Meridian Digital! We're building your Google Ads "
         f"and Meta Ads campaigns right now.\n\n"
         f"You'll get another email as soon as your campaign is ready to review.\n\n"
         f"Dashboard: {APP_URL}/dashboard\n\n"
-        f"— The AdPilot AI team"
+        f"— The Meridian Digital team"
     )
     html = f"""
     <div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto;">
-      <h2 style="color: #1a1a2e;">Welcome to AdPilot AI 👋</h2>
+      <h2 style="color: #1a1a2e;">Welcome to Meridian Digital 👋</h2>
       <p>Hi <strong>{business_name}</strong>,</p>
       <p>Thanks for signing up! Our AI is building your Google Ads and Meta Ads
       campaigns right now.</p>
@@ -82,7 +82,7 @@ def send_welcome(to: str, business_name: str) -> bool:
       <p><a href="{APP_URL}/dashboard"
             style="display:inline-block;background:#4f8cff;color:#fff;padding:12px 20px;
             border-radius:8px;text-decoration:none;font-weight:600;">Open Dashboard</a></p>
-      <p style="color:#6b7280;font-size:14px;">— The AdPilot AI team</p>
+      <p style="color:#6b7280;font-size:14px;">— The Meridian Digital team</p>
     </div>
     """
     return send_email(to, subject, html, text)
@@ -95,7 +95,7 @@ def send_campaign_ready(to: str, business_name: str, campaign_id: int) -> bool:
         f"Good news — your AI-generated ad campaign is ready!\n\n"
         f"Review and approve it here: {review_url}\n\n"
         f"Once approved, we'll set it up on Google Ads and Meta Ads within 24 hours.\n\n"
-        f"— The AdPilot AI team"
+        f"— The Meridian Digital team"
     )
     html = f"""
     <div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto;">
@@ -121,7 +121,7 @@ def send_campaign_approved(to: str, business_name: str) -> bool:
         f"Your campaign for {business_name} has been approved.\n\n"
         f"We'll set up your Google Ads and Meta Ads within 24 hours and email you "
         f"when they're live.\n\n"
-        f"— The AdPilot AI team"
+        f"— The Meridian Digital team"
     )
     html = f"""
     <div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto;">
@@ -132,7 +132,7 @@ def send_campaign_approved(to: str, business_name: str) -> bool:
       <p><a href="{APP_URL}/dashboard"
             style="display:inline-block;background:#4f8cff;color:#fff;padding:12px 20px;
             border-radius:8px;text-decoration:none;font-weight:600;">View Dashboard</a></p>
-      <p style="color:#6b7280;font-size:14px;">— The AdPilot AI team</p>
+      <p style="color:#6b7280;font-size:14px;">— The Meridian Digital team</p>
     </div>
     """
     return send_email(to, subject, html, text)

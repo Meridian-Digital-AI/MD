@@ -7,6 +7,7 @@ import CTABanner from '@/components/CTABanner';
 import ProcessStep from '@/components/ProcessStep';
 import FAQ from '@/components/FAQ';
 import GradientOrb from '@/components/GradientOrb';
+import Chatbot from '@/components/Chatbot';
 import { faqItems } from '@/lib/data/faq';
 
 export const metadata: Metadata = {
@@ -153,6 +154,25 @@ export default function HowItWorksPage() {
           <ScrollFadeIn>
             <div className="mt-12">
               <FAQ items={faqItems} />
+            </div>
+          </ScrollFadeIn>
+
+          {/* Live AI chatbot */}
+          <ScrollFadeIn>
+            <div className="mt-16">
+              <div className="mb-6 text-center">
+                <p className="text-overline text-blue-600">
+                  Can&rsquo;t find your question?
+                </p>
+                <h3 className="mt-2 text-h2 font-sora text-gray-900">
+                  Ask our AI assistant
+                </h3>
+                <p className="mt-2 text-small text-gray-500">
+                  Get instant answers about pricing, our process, or how we
+                  can help your business.
+                </p>
+              </div>
+              <Chatbot />
             </div>
           </ScrollFadeIn>
         </div>

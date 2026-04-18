@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: '*',
       allow: '/',
     },
-    sitemap: 'https://meridiandigital.co.uk/sitemap.xml', // PLACEHOLDER — replace before launch
+    sitemap: 'https://meridian-digital-partners.com/sitemap.xml',
   };
 }

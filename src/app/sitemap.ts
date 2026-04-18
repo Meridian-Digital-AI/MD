@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { sectors } from '@/lib/data/sectors';
 
-const baseUrl = 'https://meridiandigital.co.uk'; // PLACEHOLDER — replace before launch
+const baseUrl = 'https://meridian-digital-partners.com';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages: MetadataRoute.Sitemap = [

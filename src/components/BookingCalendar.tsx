@@ -59,6 +59,14 @@ export default function BookingCalendar() {
     null,
   );
   const [confirmed, setConfirmed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    businessName: '',
+  });
 
   // Mon-Fri for the current week view
   const weekDays = useMemo(
@@ -94,11 +102,61 @@ export default function BookingCalendar() {
   function handleSelect(day: Date, slot: Slot) {
     if (isPast(day, slot)) return;
     setConfirmed(false);
+    setErrorMsg(null);
     setSelected({ date: day, slot });
   }
 
-  function handleConfirm() {
-    setConfirmed(true);
+  async function handleConfirm() {
+    if (!selected || submitting) return;
+
+    if (!form.name.trim() || !form.email.trim()) {
+      setErrorMsg('Please enter your name and email.');
+      return;
+    }
+
+    setSubmitting(true);
+    setErrorMsg(null);
+
+    const slotDate = new Date(selected.date);
+    slotDate.setHours(selected.slot.hour, selected.slot.minute, 0, 0);
+
+    const slotDisplay = `${slotDate.toLocaleDateString('en-GB', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    })} at ${formatTime(selected.slot.hour, selected.slot.minute)}`;
+
+    try {
+      const res = await fetch('/api/booking', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          businessName: form.businessName,
+          slotISO: slotDate.toISOString(),
+          slotDisplay,
+        }),
+      });
+
+      const data = (await res.json().catch(() => ({}))) as {
+        success?: boolean;
+        error?: string;
+      };
+
+      if (!res.ok || !data.success) {
+        setErrorMsg(data.error ?? 'Something went wrong. Please try again.');
+        return;
+      }
+
+      setConfirmed(true);
+    } catch {
+      setErrorMsg('Network error. Please try again.');
+    } finally {
+      setSubmitting(false);
+    }
   }
 
   const canGoPrev = weekStart > startOfWeek(now);
@@ -186,8 +244,8 @@ export default function BookingCalendar() {
 
       {/* ── Confirmation panel ───────────────────────────────── */}
       {selected && !confirmed && (
-        <div className="mt-6 flex flex-col items-center gap-4 rounded-xl border border-blue-200 bg-blue-50 p-6 sm:flex-row sm:justify-between">
-          <div>
+        <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-6">
+          <div className="mb-4">
             <p className="text-body font-medium text-gray-900">
               {selected.date.toLocaleDateString('en-GB', {
                 weekday: 'long',
@@ -207,12 +265,53 @@ export default function BookingCalendar() {
               (30 min)
             </p>
           </div>
-          <button
-            onClick={handleConfirm}
-            className="btn-primary shrink-0"
-          >
-            Confirm Booking
-          </button>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <input
+              type="text"
+              required
+              placeholder="Your name *"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-small text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+            />
+            <input
+              type="email"
+              required
+              placeholder="Email *"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-small text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+            />
+            <input
+              type="tel"
+              placeholder="Phone (optional)"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-small text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+            />
+            <input
+              type="text"
+              placeholder="Business name (optional)"
+              value={form.businessName}
+              onChange={(e) => setForm({ ...form, businessName: e.target.value })}
+              className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-small text-gray-900 placeholder-gray-400 focus:border-blue-400 focus:outline-none"
+            />
+          </div>
+
+          {errorMsg && (
+            <p className="mt-3 text-small text-red-600">{errorMsg}</p>
+          )}
+
+          <div className="mt-4 flex justify-end">
+            <button
+              onClick={handleConfirm}
+              disabled={submitting}
+              className="btn-primary shrink-0 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {submitting ? 'Booking…' : 'Confirm Booking'}
+            </button>
+          </div>
         </div>
       )}
 

@@ -6,6 +6,7 @@ import Navbar from '@/components/Navbar';
 import Footer from '@/components/Footer';
 import CookieConsent from '@/components/CookieConsent';
 import EmailCapturePopup from '@/components/EmailCapturePopup';
+import PageviewTracker from '@/components/PageviewTracker';
 import { siteConfig } from '@/lib/data/config';
 
 const sora = Sora({
@@ -85,6 +86,7 @@ export default function RootLayout({
         <Footer />
         <CookieConsent />
         <EmailCapturePopup />
+        <PageviewTracker />
 
         {/* Google Analytics — replace analyticsId in config before launch */}
         <Script

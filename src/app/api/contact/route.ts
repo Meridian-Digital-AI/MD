@@ -6,6 +6,7 @@ import {
   type ContactSource,
 } from '@/lib/data/contacts';
 import { siteConfig } from '@/lib/data/config';
+import { postToSheet } from '@/lib/sheets-webhook';
 
 /* ── Constants ───────────────────────────────────────────────── */
 
@@ -272,6 +273,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Send emails (placeholder — logs to console)
     sendAutoresponder(result.data.email, result.data.name, result.data.businessType);
     sendOwnerNotification(result.data);
+
+    // Mirror to the Google Sheet / trigger 48h digest pipeline.
+    await postToSheet({
+      type: 'contact',
+      contactId: contact.id,
+      name: result.data.name,
+      email: result.data.email,
+      phone: result.data.phone,
+      businessName: result.data.businessName,
+      businessType: result.data.businessType,
+      message: result.data.message,
+      source: result.data.source,
+      sourcePage: result.data.sourcePage ?? '',
+      ip,
+    });
 
     return NextResponse.json(
       {

@@ -24,7 +24,7 @@ export const siteConfig: SiteConfig = {
   description:
     'We build modern websites with built-in business automation for local businesses in Exeter and Devon. AI-powered delivery, London quality, Exeter prices.',
   url: 'https://meridian-digital-partners.com',
-  email: 'hello@meridian-digital-partners.com',
+  email: 'wandj@meridian-digital-partners.com',
   phone: '07498 588299',
   address: 'Exeter, Devon',
   workingHours: 'Monday to Friday, 9am–5pm',

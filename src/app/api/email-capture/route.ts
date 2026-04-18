@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { postToSheet } from '@/lib/sheets-webhook';
 
 /* ── Rate limiting ────────────────────────────────────────── */
 
@@ -77,9 +78,15 @@ export async function POST(request: NextRequest) {
 
   captureStore.push(record);
 
-  // TODO: Hook into ESP (Mailchimp, Resend, ConvertKit, etc.)
-  // For now we just log; replace with real integration before launch.
   console.log('[email-capture]', record);
+
+  await postToSheet({
+    type: 'email-signup',
+    email: record.email,
+    source: record.source,
+    capturedAt: record.capturedAt,
+    ip: record.ip,
+  });
 
   return NextResponse.json({ success: true });
 }

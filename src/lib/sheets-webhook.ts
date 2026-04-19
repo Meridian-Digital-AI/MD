@@ -28,18 +28,23 @@ const SHEET_TABS: Record<SheetRecordType, string> = {
   pageview:      'Site Visits',
 };
 
-// Map a record to an ordered row for the matching tab.
+// Map a record to an ordered row matching each tab's header.
 function toRow(record: SheetRecord): string[] {
   const ts = new Date().toISOString();
+  const s = (k: string) => String(record[k] ?? '');
   switch (record.type) {
     case 'booking':
-      return [ts, String(record.slot ?? ''), String(record.name ?? ''), String(record.email ?? ''), String(record.phone ?? ''), String(record.service ?? ''), String(record.message ?? ''), String(record.ip ?? '')];
+      // Bookings: Booked At | Slot | Name | Email | Phone | Business | IP
+      return [ts, s('slotDisplay') || s('slotISO') || s('slot'), s('name'), s('email'), s('phone'), s('businessName'), s('ip')];
     case 'email-signup':
-      return [ts, String(record.email ?? ''), String(record.source ?? ''), String(record.ip ?? '')];
+      // Email Signups: Captured At | Email | Source | IP
+      return [ts, s('email'), s('source'), s('ip')];
     case 'contact':
-      return [ts, String(record.name ?? ''), String(record.email ?? ''), String(record.phone ?? ''), String(record.type ?? ''), String(record.message ?? ''), String(record.source ?? ''), String(record['sourcePage'] ?? ''), String(record.ip ?? '')];
+      // Contact Form: Submitted At | Name | Email | Phone | Business | Type | Message | Source | Source Page
+      return [ts, s('name'), s('email'), s('phone'), s('businessName'), s('businessType'), s('message'), s('source'), s('sourcePage')];
     case 'pageview':
-      return [ts, String(record.path ?? ''), String(record.referrer ?? ''), String(record.userAgent ?? ''), String(record.ip ?? '')];
+      // Site Visits: Visited At | Path | Referrer | User Agent | IP
+      return [ts, s('path'), s('referrer'), s('userAgent'), s('ip')];
     default:
       return [ts, JSON.stringify(record)];
   }

@@ -6,7 +6,10 @@
     <h2 style="margin-bottom: 0.75rem;">Something went wrong</h2>
     <p style="color: #dc2626; margin-bottom: 1.5rem;">{{ error }}</p>
     <form method="POST" action="/campaign/{{ campaign_id }}/retry">
-        <button type="submit" class="btn btn-primary">Try Again</button>
+        <button type="submit" class="btn btn-primary">Try again</button>
     </form>
+    <p class="muted small" style="margin-top: 1.5rem;">
+        Still stuck? Email <a href="mailto:hello@meridiandigital.co.uk">hello@meridiandigital.co.uk</a> and we&rsquo;ll sort it.
+    </p>
 </div>
 {% endblock %}

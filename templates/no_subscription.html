@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Subscription required - Meridian Digital{% endblock %}
+
+{% block content %}
+<div class="card auth-card">
+    <h1>You&rsquo;ll need a plan first</h1>
+    <p class="muted">
+        We couldn&rsquo;t find an active Meridian Digital subscription for
+        <strong>{{ email }}</strong>.
+    </p>
+
+    <p style="margin-top: 1rem;">
+        The AI Ads Builder is included with every Meridian Digital plan. Pick
+        the tier that suits your business on our main site, and we&rsquo;ll
+        drop you straight back in once you&rsquo;ve checked out.
+    </p>
+
+    <div style="margin-top: 1.5rem; display: flex; flex-direction: column; gap: 0.75rem;">
+        <a href="{{ marketing_site_url }}/services"
+           class="btn btn-primary btn-full"
+           target="_blank"
+           rel="noopener">
+            See plans &amp; sign up
+        </a>
+        <a href="{{ url_for('login') }}" class="btn btn-secondary btn-full">
+            Try a different email
+        </a>
+    </div>
+
+    <p class="muted small auth-footer">
+        Already paid but seeing this? Make sure you&rsquo;re using the exact
+        email address you used at checkout, or email
+        <a href="mailto:hello@meridiandigital.co.uk">hello@meridiandigital.co.uk</a>
+        and we&rsquo;ll sort it.
+    </p>
+</div>
+{% endblock %}

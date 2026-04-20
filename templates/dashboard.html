@@ -5,7 +5,7 @@
 <div class="dashboard-header">
     <div>
         <h1>Welcome back</h1>
-        <p class="muted">{{ customer.email }} · Plan: <strong>{{ (customer.plan or 'None') | title }}</strong> · Status: <strong>{{ (customer.subscription_status or 'none') | title }}</strong></p>
+        <p class="muted">{{ customer.email }} · Plan: <strong>{{ ((customer.plan or 'None') | replace('-', ' ')) | title }}</strong> · Status: <strong>{{ (customer.subscription_status or 'none') | title }}</strong></p>
     </div>
     <a href="{{ url_for('onboarding') }}" class="btn btn-primary">+ New Campaign</a>
 </div>
@@ -18,21 +18,21 @@
                 <h3>{{ c.business_name }}</h3>
                 {% set status = c.status %}
                 {% if status == 'generating' %}
-                    <span class="badge badge-info">Generating</span>
+                    <span class="badge badge-info">Writing your ads</span>
                 {% elif status == 'ready' %}
-                    <span class="badge badge-warning">Pending Review</span>
+                    <span class="badge badge-warning">Ready to review</span>
                 {% elif status == 'approved' %}
                     <span class="badge badge-warning">Approved</span>
                 {% elif status == 'pushing' %}
-                    <span class="badge badge-info">Pushing Live...</span>
+                    <span class="badge badge-info">Going live...</span>
                 {% elif status == 'live' %}
                     <span class="badge badge-success">Live</span>
                 {% elif status == 'partially_live' %}
-                    <span class="badge badge-warning">Partially Live</span>
+                    <span class="badge badge-warning">Partly live</span>
                 {% elif status == 'push_failed' %}
-                    <span class="badge badge-error">Push Failed</span>
+                    <span class="badge badge-error">Needs another go</span>
                 {% elif status == 'error' %}
-                    <span class="badge badge-error">Error</span>
+                    <span class="badge badge-error">Hit a snag</span>
                 {% else %}
                     <span class="badge">{{ status }}</span>
                 {% endif %}
@@ -63,9 +63,9 @@
     </div>
 {% else %}
     <div class="card empty-state">
-        <h2>No campaigns yet</h2>
-        <p class="muted">Create your first AI-powered ad campaign to get started.</p>
-        <a href="{{ url_for('onboarding') }}" class="btn btn-primary">Create First Campaign</a>
+        <h2>Ready to build your first campaign?</h2>
+        <p class="muted">Tell us about your business and we&rsquo;ll write your Google Ads and Meta Ads for you. Takes about 3 minutes.</p>
+        <a href="{{ url_for('onboarding') }}" class="btn btn-primary">Start your first campaign</a>
     </div>
 {% endif %}
 {% endblock %}

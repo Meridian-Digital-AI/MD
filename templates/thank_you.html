@@ -4,12 +4,12 @@
 {% block content %}
 <div class="card thank-you">
     <div class="checkmark">&#10003;</div>
-    <h1>Campaign Approved!</h1>
-    <p>Your Google Ads and Meta Ads campaigns are ready to go live.</p>
+    <h1>Campaign approved!</h1>
+    <p>Your Google Ads and Meta Ads campaigns are on their way live.</p>
     <p style="margin-top: 1rem; color: #888; font-size: 0.95rem;">
-        Our team will set everything up and your ads will be running within 24 hours.
-        We'll email {{ customer.email }} when they're live.
+        We&rsquo;re setting them up now &mdash; you&rsquo;ll be running within 24 hours.
+        We&rsquo;ll email {{ customer.email }} the moment your ads go live.
     </p>
-    <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="margin-top: 2rem;">Go to Dashboard</a>
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="margin-top: 2rem;">Back to dashboard</a>
 </div>
 {% endblock %}

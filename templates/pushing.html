@@ -10,12 +10,12 @@
     <div class="push-status-grid" style="margin-top: 1.5rem;">
         {% if 'google_ads' in platforms %}
         <div class="push-status-item" id="google-status">
-            <strong>Google Ads:</strong> <span class="badge badge-info">Pushing...</span>
+            <strong>Google Ads:</strong> <span class="badge badge-info">Going live...</span>
         </div>
         {% endif %}
         {% if 'meta_ads' in platforms %}
         <div class="push-status-item" id="meta-status">
-            <strong>Meta Ads:</strong> <span class="badge badge-info">Pushing...</span>
+            <strong>Meta Ads:</strong> <span class="badge badge-info">Going live...</span>
         </div>
         {% endif %}
     </div>
@@ -28,10 +28,10 @@
 <script>
     const campaignId = {{ campaign_id }};
     const badgeHTML = {
-        'pending': '<span class="badge">Pending</span>',
-        'pushing': '<span class="badge badge-info">Pushing...</span>',
+        'pending': '<span class="badge">Waiting</span>',
+        'pushing': '<span class="badge badge-info">Going live...</span>',
         'live': '<span class="badge badge-success">Live</span>',
-        'failed': '<span class="badge badge-error">Failed</span>',
+        'failed': '<span class="badge badge-error">Couldn\u2019t push</span>',
     };
 
     const pollInterval = setInterval(async () => {
@@ -58,9 +58,9 @@
             } else if (data.status === 'push_failed') {
                 clearInterval(pollInterval);
                 document.querySelector('.spinner').style.display = 'none';
-                document.querySelector('#push-card h2').textContent = 'Push failed';
+                document.querySelector('#push-card h2').textContent = 'We hit a snag';
                 document.querySelector('#push-card p').innerHTML =
-                    'Something went wrong. <a href="/dashboard" class="btn btn-secondary" style="margin-top:1rem;">Back to Dashboard</a>';
+                    'Something didn\u2019t go through. <a href="/dashboard" class="btn btn-secondary" style="margin-top:1rem;">Back to dashboard</a>';
             }
         } catch (e) {}
     }, 3000);

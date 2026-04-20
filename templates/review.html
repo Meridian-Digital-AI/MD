@@ -7,13 +7,13 @@
     {% if campaign_status == 'live' %}
         <span class="badge badge-success">Live</span>
     {% elif campaign_status == 'partially_live' %}
-        <span class="badge badge-warning">Partially Live</span>
+        <span class="badge badge-warning">Partly live</span>
     {% elif campaign_status == 'approved' %}
-        <span class="badge badge-warning">Approved — Ready to Push</span>
+        <span class="badge badge-warning">Approved — ready to go live</span>
     {% elif campaign_status == 'push_failed' %}
-        <span class="badge badge-error">Push Failed</span>
+        <span class="badge badge-error">Needs another go</span>
     {% else %}
-        <span class="badge badge-warning">Pending Review</span>
+        <span class="badge badge-warning">Ready to review</span>
     {% endif %}
 </div>
 
@@ -168,27 +168,32 @@
 <!-- Actions -->
 {% if campaign_status in ('ready', none) %}
 <div class="card" style="text-align: center;">
-    <p style="margin-bottom: 1rem; font-size: 1.05rem;">Happy with this campaign?</p>
-    <form method="POST" action="/campaign/{{ campaign_id }}/approve" style="display: inline;">
-        <button type="submit" class="btn btn-success" style="font-size: 1.1rem; padding: 0.9rem 2.5rem;">
-            Approve Campaign
-        </button>
-    </form>
+    <p style="margin-bottom: 1rem; font-size: 1.05rem;">Looks good?</p>
+    <div style="display: inline-flex; gap: 0.75rem; flex-wrap: wrap; justify-content: center; align-items: center;">
+        <a href="/campaign/{{ campaign_id }}/edit" class="btn btn-secondary">
+            Edit copy
+        </a>
+        <form method="POST" action="/campaign/{{ campaign_id }}/approve" style="display: inline;">
+            <button type="submit" class="btn btn-success" style="font-size: 1.1rem; padding: 0.9rem 2.5rem;">
+                Approve this campaign
+            </button>
+        </form>
+    </div>
     <p style="margin-top: 0.75rem; font-size: 0.85rem; color: #888;">
-        Once approved, you can push your campaigns live.
+        Want to tweak the headlines or descriptions? Hit Edit. Otherwise, approving sends this to Google and Meta.
     </p>
 </div>
 
 {% elif campaign_status == 'approved' %}
 <div class="card" style="text-align: center;">
-    <p style="margin-bottom: 1rem; font-size: 1.05rem;">Campaign approved! Ready to go live?</p>
+    <p style="margin-bottom: 1rem; font-size: 1.05rem;">All approved. Time to go live?</p>
     <form method="POST" action="/campaign/{{ campaign_id }}/push" style="display: inline;">
         <button type="submit" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.9rem 2.5rem;">
-            Push Live{% if campaign.google_ads and campaign.meta_ads %} to Google &amp; Meta{% elif campaign.google_ads %} to Google Ads{% elif campaign.meta_ads %} to Meta Ads{% endif %}
+            Push live{% if campaign.google_ads and campaign.meta_ads %} to Google &amp; Meta{% elif campaign.google_ads %} to Google Ads{% elif campaign.meta_ads %} to Meta Ads{% endif %}
         </button>
     </form>
     <p style="margin-top: 0.75rem; font-size: 0.85rem; color: #888;">
-        Campaigns will be created as paused — enable them in each platform when ready.
+        We&rsquo;ll create your campaigns in Google and Meta. They start paused so you can add your ad spend card, then switch them on.
     </p>
 </div>
 
@@ -259,12 +264,17 @@
 
 {% elif campaign_status == 'push_failed' %}
 <div class="card" style="text-align: center;">
-    <p style="margin-bottom: 1rem; font-size: 1.05rem; color: #dc2626;">Push failed. Try again?</p>
+    <p style="margin-bottom: 1rem; font-size: 1.05rem; color: #dc2626;">We hit a snag pushing your campaign.</p>
     <form method="POST" action="/campaign/{{ campaign_id }}/push" style="display: inline;">
         <button type="submit" class="btn btn-primary" style="font-size: 1.1rem; padding: 0.9rem 2.5rem;">
-            Retry Push
+            Try again
         </button>
     </form>
+    <p class="muted small" style="margin-top: 1rem;">
+        Usually a temporary hiccup. If it keeps failing, email
+        <a href="mailto:hello@meridiandigital.co.uk">hello@meridiandigital.co.uk</a>
+        and we&rsquo;ll sort it.
+    </p>
 </div>
 {% endif %}
 {% endblock %}

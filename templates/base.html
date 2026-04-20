@@ -17,8 +17,10 @@
             <nav class="topnav">
                 {% if current_customer %}
                     <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                    <a href="mailto:hello@meridiandigital.co.uk" title="Stuck? Email us and we'll reply within one working day.">Help</a>
                     <a href="{{ url_for('logout') }}">Logout</a>
                 {% else %}
+                    <a href="mailto:hello@meridiandigital.co.uk" title="Stuck? Email us and we'll reply within one working day.">Help</a>
                     <a href="{{ url_for('login') }}">Sign in</a>
                 {% endif %}
             </nav>

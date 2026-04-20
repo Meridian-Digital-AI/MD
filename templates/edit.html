@@ -1,0 +1,320 @@
+{% extends "base.html" %}
+{% block title %}Edit Campaign - Meridian Digital{% endblock %}
+
+{% block head %}
+<style>
+    /* Kept inline-scoped to this page — consistent with the other templates. */
+    .edit-section {
+        margin-bottom: 2rem;
+    }
+    .edit-section h3 {
+        margin-top: 1.25rem;
+        margin-bottom: 0.5rem;
+    }
+    .edit-field {
+        margin-bottom: 0.9rem;
+    }
+    .edit-field label {
+        display: block;
+        font-size: 0.85rem;
+        color: #444;
+        font-weight: 500;
+        margin-bottom: 0.25rem;
+    }
+    .edit-field .label-meta {
+        color: #888;
+        font-weight: 400;
+        font-size: 0.8rem;
+        margin-left: 0.4rem;
+    }
+    .edit-input,
+    .edit-textarea {
+        width: 100%;
+        padding: 0.55rem 0.75rem;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        font-family: inherit;
+        line-height: 1.45;
+        background: #fff;
+    }
+    .edit-input:focus,
+    .edit-textarea:focus {
+        outline: none;
+        border-color: #4f8cff;
+        box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.15);
+    }
+    .edit-textarea {
+        resize: vertical;
+        min-height: 3.2rem;
+    }
+    .char-counter {
+        display: inline-block;
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 0.2rem;
+    }
+    .char-counter.near  { color: #b45309; }
+    .char-counter.over  { color: #b91c1c; font-weight: 600; }
+    .edit-ad-card {
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        border-radius: 8px;
+        padding: 1rem 1.25rem;
+        margin-bottom: 1.25rem;
+    }
+    .edit-ad-card h4 {
+        margin: 0 0 0.5rem;
+        font-size: 1rem;
+    }
+    .edit-subhead {
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #64748b;
+        margin: 0.75rem 0 0.4rem;
+    }
+    .edit-actions {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: flex-end;
+        align-items: center;
+        flex-wrap: wrap;
+    }
+    .edit-note {
+        background: #eff6ff;
+        border: 1px solid #bfdbfe;
+        color: #1e3a8a;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        margin-bottom: 1.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="campaign-header">
+    <h1>Edit: {{ campaign.business_name }}</h1>
+    <a href="/campaign/{{ campaign_id }}" class="btn btn-secondary btn-sm">Cancel</a>
+</div>
+
+<div class="edit-note">
+    Tweak the ad copy below. Character counters will flag anything that&rsquo;s too long for the platform.
+    Keywords, audiences, and budgets stay as they are for now &mdash; message us if you need those changed.
+</div>
+
+<form method="POST" action="/campaign/{{ campaign_id }}/edit" autocomplete="off">
+
+    {# ── Google Ads ───────────────────────────────────────────── #}
+    {% if campaign.google_ads %}
+    {% set g = campaign.google_ads %}
+    <div class="card edit-section">
+        <h2>Google Ads &mdash; {{ g.campaign_name }}</h2>
+
+        {% for ad in g.ads %}
+        {% set ad_idx = loop.index0 %}
+        <div class="edit-ad-card">
+            <h4>{{ ad.ad_group }}</h4>
+
+            <div class="edit-subhead">Headlines <span style="color:#94a3b8; text-transform:none; font-weight:400;">(max 30 chars each)</span></div>
+            {% for h in ad.headlines %}
+            {% set h_idx = loop.index0 %}
+            <div class="edit-field">
+                <input
+                    type="text"
+                    class="edit-input"
+                    name="google_ads.ads.{{ ad_idx }}.headlines.{{ h_idx }}"
+                    value="{{ h }}"
+                    maxlength="30"
+                    data-maxchars="30"
+                    required>
+                <span class="char-counter">0/30</span>
+            </div>
+            {% endfor %}
+
+            <div class="edit-subhead">Descriptions <span style="color:#94a3b8; text-transform:none; font-weight:400;">(max 90 chars each)</span></div>
+            {% for d in ad.descriptions %}
+            {% set d_idx = loop.index0 %}
+            <div class="edit-field">
+                <textarea
+                    class="edit-textarea"
+                    name="google_ads.ads.{{ ad_idx }}.descriptions.{{ d_idx }}"
+                    maxlength="90"
+                    data-maxchars="90"
+                    required>{{ d }}</textarea>
+                <span class="char-counter">0/90</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% endfor %}
+
+        {% if g.callout_extensions %}
+        <h3>Callout Extensions <span style="color:#94a3b8; font-size:0.85rem; font-weight:400;">(max 25 chars each)</span></h3>
+        {% for c in g.callout_extensions %}
+        {% set c_idx = loop.index0 %}
+        <div class="edit-field">
+            <input
+                type="text"
+                class="edit-input"
+                name="google_ads.callout_extensions.{{ c_idx }}"
+                value="{{ c }}"
+                maxlength="25"
+                data-maxchars="25"
+                required>
+            <span class="char-counter">0/25</span>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {% if g.sitelink_extensions %}
+        <h3>Sitelink Extensions</h3>
+        {% for sl in g.sitelink_extensions %}
+        {% set sl_idx = loop.index0 %}
+        <div class="edit-ad-card">
+            <div class="edit-field">
+                <label>Link text <span class="label-meta">max 25</span></label>
+                <input
+                    type="text"
+                    class="edit-input"
+                    name="google_ads.sitelink_extensions.{{ sl_idx }}.link_text"
+                    value="{{ sl.link_text }}"
+                    maxlength="25"
+                    data-maxchars="25"
+                    required>
+                <span class="char-counter">0/25</span>
+            </div>
+            <div class="edit-field">
+                <label>Description 1 <span class="label-meta">max 35</span></label>
+                <input
+                    type="text"
+                    class="edit-input"
+                    name="google_ads.sitelink_extensions.{{ sl_idx }}.description_1"
+                    value="{{ sl.description_1 }}"
+                    maxlength="35"
+                    data-maxchars="35"
+                    required>
+                <span class="char-counter">0/35</span>
+            </div>
+            <div class="edit-field">
+                <label>Description 2 <span class="label-meta">max 35</span></label>
+                <input
+                    type="text"
+                    class="edit-input"
+                    name="google_ads.sitelink_extensions.{{ sl_idx }}.description_2"
+                    value="{{ sl.description_2 }}"
+                    maxlength="35"
+                    data-maxchars="35"
+                    required>
+                <span class="char-counter">0/35</span>
+            </div>
+            <div class="edit-field">
+                <label>Landing page path <span class="label-meta">e.g. /contact</span></label>
+                <input
+                    type="text"
+                    class="edit-input"
+                    name="google_ads.sitelink_extensions.{{ sl_idx }}.final_url_path"
+                    value="{{ sl.final_url_path }}"
+                    maxlength="100"
+                    data-maxchars="100"
+                    required>
+                <span class="char-counter">0/100</span>
+            </div>
+        </div>
+        {% endfor %}
+        {% endif %}
+    </div>
+    {% endif %}
+
+    {# ── Meta Ads ─────────────────────────────────────────────── #}
+    {% if campaign.meta_ads %}
+    {% set m = campaign.meta_ads %}
+    <div class="card edit-section">
+        <h2>Meta Ads &mdash; {{ m.campaign_name }}</h2>
+
+        {% for ad in m.ads %}
+        {% set ad_idx = loop.index0 %}
+        <div class="edit-ad-card">
+            <h4>{{ ad.ad_name }}</h4>
+
+            <div class="edit-field">
+                <label>Primary text <span class="label-meta">keep under 125 for preview</span></label>
+                <textarea
+                    class="edit-textarea"
+                    name="meta_ads.ads.{{ ad_idx }}.primary_text"
+                    maxlength="500"
+                    data-maxchars="125"
+                    required>{{ ad.primary_text }}</textarea>
+                <span class="char-counter">0/125</span>
+            </div>
+
+            <div class="edit-field">
+                <label>Headline <span class="label-meta">max 40</span></label>
+                <input
+                    type="text"
+                    class="edit-input"
+                    name="meta_ads.ads.{{ ad_idx }}.headline"
+                    value="{{ ad.headline }}"
+                    maxlength="40"
+                    data-maxchars="40"
+                    required>
+                <span class="char-counter">0/40</span>
+            </div>
+
+            <div class="edit-field">
+                <label>Description <span class="label-meta">max 30, shown under headline</span></label>
+                <input
+                    type="text"
+                    class="edit-input"
+                    name="meta_ads.ads.{{ ad_idx }}.description"
+                    value="{{ ad.description }}"
+                    maxlength="30"
+                    data-maxchars="30"
+                    required>
+                <span class="char-counter">0/30</span>
+            </div>
+
+            <div class="edit-field">
+                <label>Visual brief <span class="label-meta">what the image/video should show</span></label>
+                <textarea
+                    class="edit-textarea"
+                    name="meta_ads.ads.{{ ad_idx }}.visual_brief"
+                    maxlength="400"
+                    data-maxchars="300"
+                    required>{{ ad.visual_brief }}</textarea>
+                <span class="char-counter">0/300</span>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="card edit-actions">
+        <a href="/campaign/{{ campaign_id }}" class="btn btn-secondary">Cancel</a>
+        <button type="submit" class="btn btn-primary">Save changes</button>
+    </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Character counters. Each .edit-input / .edit-textarea sits next to a
+    // .char-counter span; we update the count + warning classes as they type.
+    document.querySelectorAll('.edit-input, .edit-textarea').forEach(function (el) {
+        var counter = el.parentElement.querySelector('.char-counter');
+        if (!counter) return;
+        var max = parseInt(el.dataset.maxchars, 10) || 0;
+
+        function update() {
+            var len = el.value.length;
+            counter.textContent = len + '/' + max;
+            counter.classList.toggle('over', len > max);
+            counter.classList.toggle('near', len > max * 0.85 && len <= max);
+        }
+
+        el.addEventListener('input', update);
+        update();
+    });
+</script>
+{% endblock %}

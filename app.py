@@ -1,6 +1,12 @@
-"""Flask web app — onboarding, Stripe billing, and campaign review."""
+"""Flask web app — onboarding, Stripe subscription verification, and campaign review.
+
+Billing lives on the Meridian Digital marketing website. Clients buy a plan
+there, then sign in here with the same email — we verify the active Stripe
+subscription on login/onboarding and grant access if it checks out.
+"""
 
 import os
+import re
 import json
 import threading
 from datetime import date
@@ -111,7 +117,11 @@ def generate_campaign_task(customer_id, submission_id, campaign_id):
 
 @app.route("/")
 def index():
-    return redirect(url_for("onboarding"))
+    # Already signed in? Drop them at their dashboard. Otherwise /login.
+    customer = get_current_customer()
+    if customer:
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("login"))
 
 
 @app.route("/onboarding", methods=["GET"])
@@ -144,8 +154,30 @@ def onboarding_submit():
     if not email:
         return render_template("onboarding.html", error="Email is required"), 400
 
-    # Create/get customer and save submission
-    customer_id, token = db.create_customer(email)
+    # Billing lives on the marketing website — verify the user has an active
+    # subscription before letting them create a campaign.
+    try:
+        sub_info = stripe_config.get_active_subscription_by_email(email)
+    except stripe_config.StripeNotConfigured as e:
+        return render_template(
+            "onboarding.html",
+            error=f"Server configuration error: {e}",
+            prefill=data,
+        ), 500
+
+    if not sub_info:
+        return render_template(
+            "no_subscription.html",
+            email=email,
+            marketing_site_url=MARKETING_SITE_URL,
+        ), 402
+
+    # Create/get customer (now with plan details from Stripe) and save submission.
+    customer_id, token = db.create_customer(
+        email,
+        plan=sub_info.get("tier_id"),
+        stripe_customer_id=sub_info.get("stripe_customer_id"),
+    )
     submission_id = db.save_submission(customer_id, data)
 
     # Welcome email (fire-and-forget — don't block redirect on email failure)
@@ -154,63 +186,18 @@ def onboarding_submit():
     except Exception as e:
         app.logger.warning(f"Welcome email failed: {e}")
 
-    resp = make_response(redirect(url_for("pricing")))
+    # Kick off campaign generation immediately — they've already paid on the
+    # website, so no internal checkout step needed.
+    campaign_id = db.create_campaign(customer_id, submission_id)
+    thread = threading.Thread(
+        target=generate_campaign_task,
+        args=(customer_id, submission_id, campaign_id),
+    )
+    thread.start()
+
+    resp = make_response(redirect(url_for("success")))
     resp.set_cookie("session_token", token, httponly=True, samesite="Lax", max_age=60*60*24*30)
     return resp
-
-
-@app.route("/pricing")
-@require_session
-def pricing(customer):
-    return render_template("pricing.html", plans=stripe_config.PLANS, customer=customer)
-
-
-@app.route("/checkout", methods=["POST"])
-@require_session
-def checkout(customer):
-    plan_key = request.form.get("plan")
-    if plan_key not in stripe_config.PLANS:
-        abort(400)
-
-    base_url = request.host_url.rstrip("/")
-    session = stripe_config.create_checkout_session(
-        customer_email=customer["email"],
-        customer_id=customer["id"],
-        plan_key=plan_key,
-        base_url=base_url,
-    )
-    return redirect(session.url)
-
-
-@app.route("/stripe/webhook", methods=["POST"])
-def stripe_webhook():
-    payload = request.get_data()
-    sig_header = request.headers.get("Stripe-Signature")
-
-    try:
-        event = stripe_config.verify_webhook(payload, sig_header)
-    except Exception:
-        abort(400)
-
-    if event["type"] == "checkout.session.completed":
-        session = event["data"]["object"]
-        customer_id = int(session["client_reference_id"])
-        plan = session["metadata"].get("plan", "starter")
-        stripe_cust_id = session.get("customer")
-
-        db.update_customer_plan(customer_id, plan, stripe_cust_id)
-
-        # Start campaign generation
-        sub = db.get_latest_submission(customer_id)
-        if sub:
-            campaign_id = db.create_campaign(customer_id, sub["id"])
-            thread = threading.Thread(
-                target=generate_campaign_task,
-                args=(customer_id, sub["id"], campaign_id),
-            )
-            thread.start()
-
-    return jsonify({"status": "ok"})
 
 
 @app.route("/success")
@@ -283,6 +270,92 @@ def campaign_review(customer, campaign_id):
                            meta_push_status=campaign.get("meta_push_status"),
                            google_campaign_id=campaign.get("google_campaign_id"),
                            meta_campaign_id=campaign.get("meta_campaign_id"))
+
+
+# ─── Campaign editing (v1: copy only) ────────────────────────────────────────
+#
+# Customers can tweak ad copy before approving. We keep the editable surface
+# small on purpose: headlines, descriptions, callouts, sitelink text, and the
+# Meta ad copy fields. Keywords, audiences, budgets, and structural edits
+# stay read-only for v1 — those need their own UX pass.
+#
+# Form field names encode the JSON path, e.g.
+#   google_ads.ads.0.headlines.2
+#   meta_ads.ads.1.primary_text
+# The whitelist below is the only way we'll write into campaign_json, so a
+# crafted form can't touch budgets, audiences, or anything else.
+
+EDITABLE_PATH_PATTERNS = [
+    re.compile(r"^google_ads\.ads\.\d+\.headlines\.\d+$"),
+    re.compile(r"^google_ads\.ads\.\d+\.descriptions\.\d+$"),
+    re.compile(r"^google_ads\.callout_extensions\.\d+$"),
+    re.compile(
+        r"^google_ads\.sitelink_extensions\.\d+\."
+        r"(link_text|description_1|description_2|final_url_path)$"
+    ),
+    re.compile(
+        r"^meta_ads\.ads\.\d+\."
+        r"(primary_text|headline|description|visual_brief)$"
+    ),
+]
+
+
+def _is_editable_path(key):
+    return any(p.match(key) for p in EDITABLE_PATH_PATTERNS)
+
+
+def _set_nested(obj, path_parts, value):
+    """Walk `obj` following `path_parts` and set the final key/index to value."""
+    cursor = obj
+    for part in path_parts[:-1]:
+        cursor = cursor[int(part)] if part.isdigit() else cursor[part]
+    last = path_parts[-1]
+    if last.isdigit():
+        cursor[int(last)] = value
+    else:
+        cursor[last] = value
+
+
+@app.route("/campaign/<int:campaign_id>/edit", methods=["GET"])
+@require_session
+def campaign_edit(customer, campaign_id):
+    campaign = db.get_campaign(campaign_id)
+    if not campaign or campaign["customer_id"] != customer["id"]:
+        abort(404)
+    # Only editable before approval — after that, changes could desync with
+    # what's already been pushed (or is about to be).
+    if campaign["status"] != "ready":
+        return redirect(url_for("campaign_review", campaign_id=campaign_id))
+    data = json.loads(campaign["campaign_json"])
+    return render_template("edit.html", campaign=data, campaign_id=campaign_id)
+
+
+@app.route("/campaign/<int:campaign_id>/edit", methods=["POST"])
+@require_session
+def campaign_edit_submit(customer, campaign_id):
+    campaign = db.get_campaign(campaign_id)
+    if not campaign or campaign["customer_id"] != customer["id"]:
+        abort(404)
+    if campaign["status"] != "ready":
+        abort(400)
+
+    data = json.loads(campaign["campaign_json"])
+    for key, value in request.form.items():
+        if not _is_editable_path(key):
+            # Silently skip unknown/blocked paths — we don't want a stray field
+            # to crash the save or open a write-anywhere hole.
+            continue
+        try:
+            _set_nested(data, key.split("."), value.strip())
+        except (KeyError, IndexError, ValueError):
+            continue
+
+    db.update_campaign(
+        campaign_id,
+        campaign_json=json.dumps(data, indent=2),
+        status="ready",
+    )
+    return redirect(url_for("campaign_review", campaign_id=campaign_id))
 
 
 @app.route("/campaign/<int:campaign_id>/approve", methods=["POST"])
@@ -400,15 +473,46 @@ def login_submit():
     if not email:
         return render_template("login.html", error="Email is required"), 400
 
-    existing = db.get_customer_by_email(email)
-    if not existing:
+    # Source of truth: Stripe. Check for an active subscription on this email.
+    try:
+        sub_info = stripe_config.get_active_subscription_by_email(email)
+    except stripe_config.StripeNotConfigured as e:
         return render_template(
             "login.html",
-            error="No account found for that email. Sign up below.",
-        ), 404
+            error=f"Server configuration error: {e}",
+        ), 500
 
-    token = db.refresh_session_token(existing["id"])
-    resp = make_response(redirect(url_for("dashboard")))
+    if not sub_info:
+        # No active subscription — send them to the marketing site to buy one.
+        return render_template(
+            "no_subscription.html",
+            email=email,
+            marketing_site_url=MARKETING_SITE_URL,
+        ), 402
+
+    # Sync local record with Stripe (create if first login, update if returning).
+    existing = db.get_customer_by_email(email)
+    if existing:
+        customer_id = existing["id"]
+        db.update_customer_plan(
+            customer_id,
+            plan=sub_info.get("tier_id") or "active",
+            stripe_customer_id=sub_info.get("stripe_customer_id"),
+        )
+        token = db.refresh_session_token(customer_id)
+    else:
+        customer_id, token = db.create_customer(
+            email,
+            plan=sub_info.get("tier_id"),
+            stripe_customer_id=sub_info.get("stripe_customer_id"),
+        )
+
+    # If they've never completed onboarding, drop them into onboarding.
+    # Otherwise send them to their dashboard.
+    has_submission = db.get_latest_submission(customer_id) is not None
+    redirect_target = "dashboard" if has_submission else "onboarding"
+
+    resp = make_response(redirect(url_for(redirect_target)))
     resp.set_cookie("session_token", token, httponly=True, samesite="Lax", max_age=60*60*24*30)
     return resp
 

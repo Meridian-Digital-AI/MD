@@ -83,24 +83,50 @@ def init_db():
     conn.close()
 
 
-def create_customer(email):
+def create_customer(email, plan=None, stripe_customer_id=None):
+    """Create or refresh a customer record, returning (customer_id, session_token).
+
+    If `plan` / `stripe_customer_id` are provided (e.g. after a Stripe lookup
+    on the marketing site), they're stored so the dashboard can display the
+    active tier without re-hitting Stripe on every page load.
+    """
     conn = get_db()
     token = str(uuid.uuid4())
+    email = (email or "").strip().lower()
     try:
         conn.execute(
-            "INSERT INTO customers (email, session_token) VALUES (?, ?)",
-            (email, token),
+            """INSERT INTO customers
+               (email, session_token, plan, stripe_customer_id, subscription_status)
+               VALUES (?, ?, ?, ?, ?)""",
+            (
+                email,
+                token,
+                plan,
+                stripe_customer_id,
+                "active" if plan else "none",
+            ),
         )
         conn.commit()
         customer_id = conn.execute(
             "SELECT id FROM customers WHERE email = ?", (email,)
         ).fetchone()["id"]
     except sqlite3.IntegrityError:
-        # Email already exists — update token
-        conn.execute(
-            "UPDATE customers SET session_token = ? WHERE email = ?",
-            (token, email),
-        )
+        # Email already exists — refresh token and (optionally) update plan.
+        if plan or stripe_customer_id:
+            conn.execute(
+                """UPDATE customers
+                   SET session_token = ?,
+                       plan = COALESCE(?, plan),
+                       stripe_customer_id = COALESCE(?, stripe_customer_id),
+                       subscription_status = 'active'
+                   WHERE email = ?""",
+                (token, plan, stripe_customer_id, email),
+            )
+        else:
+            conn.execute(
+                "UPDATE customers SET session_token = ? WHERE email = ?",
+                (token, email),
+            )
         conn.commit()
         customer_id = conn.execute(
             "SELECT id FROM customers WHERE email = ?", (email,)

@@ -367,13 +367,36 @@ def campaign_approve(customer, campaign_id):
     db.update_campaign(campaign_id, status="approved",
                        campaign_json=campaign["campaign_json"])
 
-    # Send confirmation email
+    # Parse campaign once — used by both emails below.
     try:
         data = json.loads(campaign["campaign_json"])
-        business_name = data.get("business_name") or "your business"
-        email_service.send_campaign_approved(customer["email"], business_name)
     except Exception as e:
-        app.logger.warning(f"Approval email failed: {e}")
+        app.logger.warning(f"Failed to parse campaign_json on approve: {e}")
+        data = None
+
+    # Confirmation email to the customer.
+    if data is not None:
+        try:
+            business_name = data.get("business_name") or "your business"
+            email_service.send_campaign_approved(customer["email"], business_name)
+        except Exception as e:
+            app.logger.warning(f"Approval email failed: {e}")
+
+    # Operator notification: email Joe (OWNER_EMAIL) the full campaign so he
+    # can set it up manually in Google Ads Manager / Meta Business Suite while
+    # we wait for API access. Once APIs are wired, this doubles as an audit
+    # trail of who approved what.
+    if data is not None:
+        try:
+            submission = db.get_submission(campaign["submission_id"])
+            email_service.send_campaign_to_owner(
+                campaign_data=data,
+                customer_email=customer["email"],
+                submission=submission,
+                campaign_id=campaign_id,
+            )
+        except Exception as e:
+            app.logger.warning(f"Owner notification email failed: {e}")
 
     return redirect(url_for("thank_you"))
 

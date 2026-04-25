@@ -33,7 +33,7 @@ export const demos: Demo[] = [
     designNotes: 'Warm reds and golds, Asian cuisine aesthetic',
     gradientFrom: '#991B1B',
     gradientTo: '#D97706',
-    demoUrl: '/work#oriental-city', // TODO: Replace with deployed Vercel URL once live
+    demoUrl: 'https://oriental-city.vercel.app',
     screenshotAlt: 'Oriental City takeaway ordering website showing menu and checkout flow',
   },
   {
@@ -56,7 +56,7 @@ export const demos: Demo[] = [
     designNotes: 'Deep navy, white, amber — trustworthy and established',
     gradientFrom: '#0F1B2D',
     gradientTo: '#D97706',
-    demoUrl: '/work#parkside-garage', // TODO: Replace with deployed Vercel URL once live
+    demoUrl: 'https://parkside-garage.vercel.app',
     screenshotAlt: 'Parkside Garage website showing MOT booking system and reminder dashboard',
   },
 ];

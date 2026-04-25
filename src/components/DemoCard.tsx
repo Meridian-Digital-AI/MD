@@ -65,6 +65,8 @@ export default function DemoCard({
         <div className="mt-6">
           <a
             href={demoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
             className="btn-primary w-full"
             aria-label={`View live demo of ${name}`}
           >

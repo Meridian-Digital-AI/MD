@@ -69,6 +69,8 @@ export default function WorkPage() {
                   gradientTo={demo.gradientTo}
                   demoUrl={demo.demoUrl}
                   screenshotAlt={demo.screenshotAlt}
+                  slug={demo.slug}
+                  caseStudyAvailable={demo.slug === 'oriental-city'}
                 />
               ))}
             </div>

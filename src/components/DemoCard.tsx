@@ -1,4 +1,5 @@
 import { Check } from 'lucide-react';
+import Link from 'next/link';
 import type { Demo } from '@/lib/data/demos';
 
 type DemoCardProps = Pick<
@@ -11,7 +12,8 @@ type DemoCardProps = Pick<
   | 'gradientTo'
   | 'demoUrl'
   | 'screenshotAlt'
->;
+  | 'slug'
+> & { caseStudyAvailable?: boolean };
 
 export default function DemoCard({
   name,
@@ -22,6 +24,8 @@ export default function DemoCard({
   gradientTo,
   demoUrl,
   screenshotAlt,
+  slug,
+  caseStudyAvailable = false,
 }: DemoCardProps) {
   const displayedFeatures = features.slice(0, 8);
 
@@ -62,16 +66,25 @@ export default function DemoCard({
           ))}
         </ul>
 
-        <div className="mt-6">
+        <div className="mt-6 flex flex-col gap-2 sm:flex-row">
           <a
             href={demoUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="btn-primary w-full"
+            className="btn-primary flex-1 text-center"
             aria-label={`View live demo of ${name}`}
           >
             View Live Demo
           </a>
+          {caseStudyAvailable && (
+            <Link
+              href={`/work/${slug}`}
+              className="flex-1 inline-flex items-center justify-center rounded-full border border-gray-300 px-6 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              aria-label={`Read full case study for ${name}`}
+            >
+              Read Case Study
+            </Link>
+          )}
         </div>
       </div>
     </div>

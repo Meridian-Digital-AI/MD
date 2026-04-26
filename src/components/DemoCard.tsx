@@ -1,6 +1,7 @@
 import { Check } from 'lucide-react';
 import Link from 'next/link';
 import type { Demo } from '@/lib/data/demos';
+import DemoHero from './DemoHero';
 
 type DemoCardProps = Pick<
   Demo,
@@ -20,8 +21,6 @@ export default function DemoCard({
   businessType,
   features,
   description,
-  gradientFrom,
-  gradientTo,
   demoUrl,
   screenshotAlt,
   slug,
@@ -31,18 +30,8 @@ export default function DemoCard({
 
   return (
     <div className="overflow-hidden rounded-xl border border-gray-200 bg-white card-hover">
-      {/* Gradient preview area */}
-      <div
-        className="flex min-h-[300px] items-center justify-center p-8"
-        style={{
-          background: `linear-gradient(135deg, ${gradientFrom}, ${gradientTo})`,
-        }}
-        role="img"
-        aria-label={screenshotAlt}
-      >
-        <span className="text-h2 text-center font-bold text-white drop-shadow-lg">
-          {name}
-        </span>
+      <div role="img" aria-label={screenshotAlt}>
+        <DemoHero slug={slug} name={name} />
       </div>
 
       {/* Content */}

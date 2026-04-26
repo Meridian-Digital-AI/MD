@@ -112,6 +112,7 @@ export default function Navbar() {
   }
 
   return (
+    <>
     <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         scrolled
@@ -205,15 +206,18 @@ export default function Navbar() {
           </button>
         </div>
       </nav>
+    </header>
 
-      {/* Mobile overlay */}
-      <div
+    {/* Mobile overlay — rendered OUTSIDE <header> because the header's
+        backdrop-filter (when scrolled) creates a containing block that would
+        otherwise trap a position:fixed child inside the header's bounds. */}
+    <div
         id="mobile-nav"
         ref={mobileNavRef}
         role="dialog"
         aria-modal="true"
         aria-label="Mobile navigation"
-        className={`fixed inset-0 top-0 z-50 flex flex-col bg-white dark:bg-navy-900 transition-all duration-300 lg:hidden ${
+        className={`fixed inset-0 top-0 z-[60] flex flex-col bg-white dark:bg-navy-900 transition-all duration-300 lg:hidden ${
           mobileOpen
             ? 'opacity-100 pointer-events-auto'
             : 'opacity-0 pointer-events-none'
@@ -272,6 +276,6 @@ export default function Navbar() {
           </li>
         </ul>
       </div>
-    </header>
+    </>
   );
 }

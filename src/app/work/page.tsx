@@ -70,7 +70,7 @@ export default function WorkPage() {
                   demoUrl={demo.demoUrl}
                   screenshotAlt={demo.screenshotAlt}
                   slug={demo.slug}
-                  caseStudyAvailable={demo.slug === 'oriental-city'}
+                  caseStudyAvailable={demo.slug === 'oriental-city' || demo.slug === 'parkside-garage'}
                 />
               ))}
             </div>

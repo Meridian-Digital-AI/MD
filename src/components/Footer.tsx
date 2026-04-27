@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { siteConfig } from '@/lib/data/config';
 import { sectors } from '@/lib/data/sectors';
+import { team } from '@/lib/data/team';
 
 const quickLinks = [
   { label: 'What We Build', href: '/services' },
@@ -84,14 +85,18 @@ export default function Footer() {
                   {siteConfig.email}
                 </a>
               </li>
-              <li>
-                <a
-                  href={`tel:${siteConfig.phone.replace(/\s/g, '')}`}
-                  className="text-small text-gray-200 transition-colors hover:text-blue-400"
-                >
-                  {siteConfig.phone}
-                </a>
-              </li>
+              {team
+                .filter((member) => member.phone)
+                .map((member) => (
+                  <li key={member.id}>
+                    <a
+                      href={`tel:${member.phone!.replace(/\s/g, '')}`}
+                      className="text-small text-gray-200 transition-colors hover:text-blue-400"
+                    >
+                      {member.name} — {member.phone}
+                    </a>
+                  </li>
+                ))}
               <li>
                 <p className="text-small text-gray-400">{siteConfig.workingHours}</p>
               </li>

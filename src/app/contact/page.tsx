@@ -5,6 +5,7 @@ import ScrollFadeIn from '@/components/ScrollFadeIn';
 import ContactForm from '@/components/ContactForm';
 import BookingCalendar from '@/components/BookingCalendar';
 import { siteConfig } from '@/lib/data/config';
+import { team } from '@/lib/data/team';
 
 export const metadata: Metadata = {
   title: 'Let\'s Talk | Meridian Digital',
@@ -21,8 +22,8 @@ export default function ContactPage() {
           <ScrollFadeIn>
             <h1 className="text-h1 font-sora text-white">Let&rsquo;s Talk</h1>
             <p className="text-body mx-auto mt-5 max-w-2xl text-gray-400">
-              Book a free discovery call or send us a message. We usually respond
-              within 2 hours.
+              Book a free discovery call or send us a message. We reply within
+              one working day.
             </p>
           </ScrollFadeIn>
         </div>
@@ -97,12 +98,20 @@ export default function ContactPage() {
                       <p className="text-small font-medium text-gray-700">
                         Phone
                       </p>
-                      <a
-                        href={`tel:${siteConfig.phone.replace(/\s/g, '')}`}
-                        className="text-body text-blue-600 underline-offset-2 hover:underline"
-                      >
-                        {siteConfig.phone}
-                      </a>
+                      <ul className="space-y-1">
+                        {team
+                          .filter((member) => member.phone)
+                          .map((member) => (
+                            <li key={member.id}>
+                              <a
+                                href={`tel:${member.phone!.replace(/\s/g, '')}`}
+                                className="text-body text-blue-600 underline-offset-2 hover:underline"
+                              >
+                                {member.name} — {member.phone}
+                              </a>
+                            </li>
+                          ))}
+                      </ul>
                     </div>
                   </div>
 
@@ -135,7 +144,7 @@ export default function ContactPage() {
                         {siteConfig.workingHours}
                       </p>
                       <p className="text-small mt-1 text-gray-500">
-                        We usually respond to enquiries within 2 hours.
+                        We reply to enquiries within one working day.
                       </p>
                     </div>
                   </div>

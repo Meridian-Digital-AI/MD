@@ -172,6 +172,12 @@ export default function Navbar() {
         {/* Desktop right side */}
         <div className="hidden lg:flex items-center gap-3">
           <DarkModeToggle />
+          <Link
+            href="/login"
+            className="text-sm font-medium text-gray-700 dark:text-gray-200 hover:text-gray-900 dark:hover:text-white"
+          >
+            Sign in
+          </Link>
           <Link href="/contact#book" className="btn-primary text-sm">
             Book a Call
           </Link>
@@ -265,6 +271,15 @@ export default function Navbar() {
               </Link>
             </li>
           ))}
+          <li>
+            <Link
+              href="/login"
+              onClick={() => setMobileOpen(false)}
+              className="text-xl font-sora font-medium min-h-[44px] inline-flex items-center text-gray-700 dark:text-gray-200"
+            >
+              Sign in
+            </Link>
+          </li>
           <li className="mt-4">
             <Link
               href="/contact#book"

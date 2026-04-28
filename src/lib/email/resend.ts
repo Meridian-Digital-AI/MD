@@ -15,7 +15,10 @@ interface SendEmailResult {
   skipped?: boolean;
 }
 
-const FROM = process.env.RESEND_FROM || 'Meridian Digital <noreply@meridian-digital-partners.com>';
+// Default to Resend's shared onboarding address — it's pre-verified so sends work
+// out of the box. Once the user verifies meridian-digital-partners.com in Resend,
+// they can override via RESEND_FROM env var.
+const FROM = process.env.RESEND_FROM || 'Meridian Digital <onboarding@resend.dev>';
 
 export async function sendEmail({ to, subject, html, replyTo }: SendEmailArgs): Promise<SendEmailResult> {
   const apiKey = process.env.RESEND_API_KEY;

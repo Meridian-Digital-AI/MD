@@ -132,11 +132,14 @@ export async function POST(req: NextRequest, ctx: { params: Promise<{ slug: stri
     return NextResponse.json({ error: 'insert_failed' }, { status: 500, headers: corsHeaders });
   }
 
-  // Fire-and-forget notifications. We don't await — the form submitter shouldn't
-  // block on email delivery. Errors are logged inside sendEmail.
-  notify(client.business_name, lead, inserted.id, supabase).catch((e) =>
-    console.error('[leads] notify threw', e),
-  );
+  // Notification email. We await it so Vercel's serverless runtime doesn't kill
+  // the request before the Resend POST finishes. Resend itself is fast (~200ms)
+  // so this adds negligible latency to the form submitter.
+  try {
+    await notify(client.business_name, lead, inserted.id, supabase);
+  } catch (e) {
+    console.error('[leads] notify threw', e);
+  }
 
   return NextResponse.json({ ok: true, id: inserted.id }, { status: 201, headers: corsHeaders });
 }

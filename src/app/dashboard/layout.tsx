@@ -44,8 +44,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
           <h1 className="text-xl font-semibold text-[var(--color-navy-900)]">Account not linked yet</h1>
           <p className="mt-2 text-slate-600">
             Your account isn&apos;t linked to a business yet. Drop us an email at{' '}
-            <a className="text-[var(--color-blue-600)] underline" href="mailto:hello@meridian-digital-partners.com">
-              hello@meridian-digital-partners.com
+            <a className="text-[var(--color-blue-600)] underline" href="mailto:wandj@meridian-digital-partners.com">
+              wandj@meridian-digital-partners.com
             </a>{' '}
             and we&apos;ll connect you.
           </p>

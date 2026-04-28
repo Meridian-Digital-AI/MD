@@ -40,6 +40,23 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
+      <nav className="border-b border-slate-200 bg-white">
+        <div className="mx-auto flex max-w-7xl items-center gap-6 px-6 py-2 text-sm">
+          <Link
+            href="/admin"
+            className="text-slate-600 hover:text-[var(--color-navy-900)]"
+          >
+            Clients
+          </Link>
+          <Link
+            href="/admin/access"
+            className="text-slate-600 hover:text-[var(--color-navy-900)]"
+          >
+            Access
+          </Link>
+        </div>
+      </nav>
+
       <main className="mx-auto max-w-7xl px-6 py-8">{children}</main>
     </div>
   );

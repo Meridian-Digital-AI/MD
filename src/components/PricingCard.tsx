@@ -1,9 +1,10 @@
-import { Check } from 'lucide-react';
+import Link from 'next/link';
+import { ArrowRight, Check } from 'lucide-react';
 import type { PricingTier } from '@/lib/data/pricing';
 
 type PricingCardProps = Pick<
   PricingTier,
-  'name' | 'monthlyPrice' | 'setupFee' | 'target' | 'highlighted' | 'features' | 'contractLength'
+  'name' | 'monthlyPrice' | 'setupFee' | 'target' | 'highlighted' | 'features' | 'contractLength' | 'slug'
 >;
 
 export default function PricingCard({
@@ -14,6 +15,7 @@ export default function PricingCard({
   highlighted,
   features,
   contractLength,
+  slug,
 }: PricingCardProps) {
   return (
     <div
@@ -57,7 +59,15 @@ export default function PricingCard({
         ))}
       </ul>
 
-      <div className="mt-auto pt-6">
+      <div className="mt-auto pt-6 space-y-3">
+        <Link
+          href={`/services/${slug}`}
+          className="flex items-center justify-center gap-1 text-small font-semibold text-blue-600 hover:text-blue-700"
+          aria-label={`See what's included in the ${name} plan`}
+        >
+          See what&rsquo;s included
+          <ArrowRight className="h-4 w-4" aria-hidden="true" />
+        </Link>
         <a
           href="/contact"
           className={highlighted ? 'btn-primary w-full' : 'btn-secondary w-full'}

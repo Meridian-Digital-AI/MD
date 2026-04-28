@@ -46,7 +46,7 @@ export default function ServicesPage() {
             />
 
             <div className="mt-12 grid grid-cols-1 gap-8 lg:grid-cols-3 items-start">
-              {pricingTiers.map((tier, i) => (
+              {pricingTiers.map((tier) => (
                 <div
                   key={tier.id}
                   className={
@@ -63,6 +63,7 @@ export default function ServicesPage() {
                     highlighted={tier.highlighted}
                     features={tier.features}
                     contractLength={tier.contractLength}
+                    slug={tier.slug}
                   />
                 </div>
               ))}

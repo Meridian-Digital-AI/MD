@@ -27,14 +27,22 @@ export default async function AdminHome() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-baseline justify-between">
+      <div className="flex items-baseline justify-between gap-4">
         <div>
           <h2 className="text-2xl font-semibold text-[var(--color-navy-900)]">All clients</h2>
           <p className="mt-1 text-slate-600">
             Click any client to drill into their dashboard. Health scores are admin-only.
           </p>
         </div>
-        <div className="text-sm text-slate-500">{clients?.length ?? 0} clients</div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-slate-500">{clients?.length ?? 0} clients</span>
+          <Link
+            href="/admin/clients/new"
+            className="rounded-lg bg-[var(--color-navy-900)] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90"
+          >
+            + New client
+          </Link>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -73,7 +81,11 @@ export default async function AdminHome() {
 
       {(clients?.length ?? 0) === 0 && (
         <div className="rounded-xl border border-dashed border-slate-300 bg-white p-12 text-center text-slate-500">
-          No clients yet. Run the seed in <code>supabase/schema.sql</code> or add one in Supabase Studio.
+          No clients yet.{' '}
+          <Link href="/admin/clients/new" className="font-semibold text-[var(--color-navy-900)] underline">
+            Add your first client
+          </Link>
+          .
         </div>
       )}
     </div>

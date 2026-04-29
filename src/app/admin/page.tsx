@@ -1,26 +1,28 @@
 import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { TIER_LABELS, type PackageTier } from '@/lib/dashboard/packageFeatures';
+import { computeClientHealth } from '@/lib/dashboard/computeClientHealth';
 
 export default async function AdminHome() {
   const supabase = await createSupabaseServerClient();
 
   const { data: clients } = await supabase
     .from('clients')
-    .select('id, business_name, slug, package_tier, domain, health_score, created_at')
+    .select('id, business_name, slug, package_tier, domain, created_at')
     .order('business_name');
 
-  // Pull lead/pageview counts in parallel
+  // Pull lead/pageview counts + health scores in parallel
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const counts = await Promise.all(
     (clients ?? []).map(async (c) => {
-      const [{ count: leadCount }, { count: pvCount }] = await Promise.all([
+      const [{ count: leadCount }, { count: pvCount }, health] = await Promise.all([
         supabase.from('leads').select('id', { count: 'exact', head: true })
           .eq('client_id', c.id).gte('created_at', since),
         supabase.from('pageviews').select('id', { count: 'exact', head: true })
           .eq('client_id', c.id).gte('ts', since),
+        computeClientHealth(supabase, c),
       ]);
-      return { id: c.id, leadCount: leadCount ?? 0, pvCount: pvCount ?? 0 };
+      return { id: c.id, leadCount: leadCount ?? 0, pvCount: pvCount ?? 0, healthScore: health.score };
     }),
   );
   const countMap = new Map(counts.map((c) => [c.id, c]));
@@ -54,7 +56,7 @@ export default async function AdminHome() {
               href={`/admin/clients/${c.slug}`}
               className="group relative rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition hover:border-slate-300 hover:shadow"
             >
-              <HealthBadge score={c.health_score} />
+              <HealthBadge score={ct?.healthScore ?? null} />
               <h3 className="pr-12 text-base font-semibold text-[var(--color-navy-900)] group-hover:underline">
                 {c.business_name}
               </h3>

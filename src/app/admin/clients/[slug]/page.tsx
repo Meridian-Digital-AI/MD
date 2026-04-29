@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
 import { TIER_LABELS, sectionsForTier, SECTION_LABELS, type PackageTier } from '@/lib/dashboard/packageFeatures';
 import { StatCard } from '@/components/dashboard/StatCard';
+import { computeClientHealth } from '@/lib/dashboard/computeClientHealth';
 import ClientApiKeyCard from './ClientApiKeyCard';
 
 export default async function AdminClientPage({
@@ -21,14 +22,23 @@ export default async function AdminClientPage({
   if (!client) notFound();
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const [{ count: leadCount }, { count: pvCount }, { data: recentLeads }] = await Promise.all([
+  const [{ count: leadCount }, { count: pvCount }, { data: recentLeads }, health] = await Promise.all([
     supabase.from('leads').select('id', { count: 'exact', head: true })
       .eq('client_id', client.id).gte('created_at', since),
     supabase.from('pageviews').select('id', { count: 'exact', head: true })
       .eq('client_id', client.id).gte('ts', since),
     supabase.from('leads').select('id, name, email, status, created_at, source')
       .eq('client_id', client.id).order('created_at', { ascending: false }).limit(10),
+    computeClientHealth(supabase, client),
   ]);
+
+  // Persist the freshly-computed score back to the clients row so other
+  // queries can read a cached value without recomputing. Best-effort —
+  // if it fails we don't want to break the page render.
+  if (health.score !== client.health_score) {
+    const admin = createSupabaseAdminClient();
+    await admin.from('clients').update({ health_score: health.score }).eq('id', client.id);
+  }
 
   const tier = client.package_tier as PackageTier;
 
@@ -50,10 +60,32 @@ export default async function AdminClientPage({
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Health score" value={client.health_score ?? '—'} hint="Admin-only · 1–10" />
+        <StatCard label="Health score" value={`${health.score}/10`} hint={health.isNewClient ? 'New client — neutral default' : 'Computed live from signals'} />
         <StatCard label="Leads (30d)" value={leadCount ?? 0} />
         <StatCard label="Pageviews (30d)" value={pvCount ?? 0} />
         <StatCard label="Active campaigns" value="—" />
+      </div>
+
+      <div className="rounded-xl border border-slate-200 bg-white p-6">
+        <div className="flex items-baseline justify-between gap-4">
+          <h3 className="text-sm font-semibold text-slate-900">Health score breakdown</h3>
+          <span className="text-xs text-slate-400">
+            Updated {new Date(health.computedAt).toLocaleString('en-GB')}
+          </span>
+        </div>
+        <ul className="mt-3 space-y-2 text-sm">
+          {health.components.map((c) => (
+            <li key={c.key} className="flex items-start justify-between gap-3 border-b border-slate-100 pb-2 last:border-0 last:pb-0">
+              <div>
+                <div className="font-medium text-slate-700">{c.label}</div>
+                <div className="text-xs text-slate-500">{c.detail}</div>
+              </div>
+              <div className="shrink-0 text-right text-sm font-semibold text-slate-900">
+                {c.points}<span className="text-slate-400"> / {c.max}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

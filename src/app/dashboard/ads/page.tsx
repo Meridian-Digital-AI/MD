@@ -46,6 +46,7 @@ export default async function AdsPage() {
           status={google?.status ?? 'pending'}
           accountLabel={google?.account_label}
           connectHref="/dashboard/connect/google-ads"
+          viewHref="/dashboard/ads/google-ads"
         />
       </div>
     </div>
@@ -53,12 +54,13 @@ export default async function AdsPage() {
 }
 
 function ProviderCard({
-  name, status, accountLabel, connectHref,
+  name, status, accountLabel, connectHref, viewHref,
 }: {
   name: string;
   status: string;
   accountLabel?: string | null;
   connectHref: string;
+  viewHref?: string;
 }) {
   const connected = status === 'connected';
   return (
@@ -74,9 +76,23 @@ function ProviderCard({
         </span>
       </div>
       {connected ? (
-        <p className="mt-3 text-sm text-slate-600">
-          Linked to <strong>{accountLabel}</strong>. Live campaign data will appear here in the next release.
-        </p>
+        <>
+          <p className="mt-3 text-sm text-slate-600">
+            Linked to <strong>{accountLabel}</strong>.
+          </p>
+          {viewHref ? (
+            <Link
+              href={viewHref}
+              className="mt-4 inline-block rounded-lg bg-[var(--color-blue-600)] px-4 py-2 text-sm font-semibold text-white"
+            >
+              View campaigns →
+            </Link>
+          ) : (
+            <p className="mt-3 text-xs text-slate-400">
+              Live campaign data will appear here in the next release.
+            </p>
+          )}
+        </>
       ) : (
         <>
           <p className="mt-3 text-sm text-slate-600">

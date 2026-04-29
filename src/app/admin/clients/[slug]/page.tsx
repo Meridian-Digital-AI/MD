@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { TIER_LABELS, sectionsForTier, SECTION_LABELS, type PackageTier } from '@/lib/dashboard/packageFeatures';
 import { StatCard } from '@/components/dashboard/StatCard';
+import ClientApiKeyCard from './ClientApiKeyCard';
 
 export default async function AdminClientPage({
   params,
@@ -14,7 +15,7 @@ export default async function AdminClientPage({
 
   const { data: client } = await supabase
     .from('clients')
-    .select('id, business_name, slug, package_tier, domain, health_score, health_score_notes, created_at')
+    .select('id, business_name, slug, package_tier, domain, health_score, health_score_notes, created_at, api_key')
     .eq('slug', slug)
     .single();
   if (!client) notFound();
@@ -80,6 +81,8 @@ export default async function AdminClientPage({
           </ul>
         </div>
       </div>
+
+      {client.api_key && <ClientApiKeyCard slug={client.slug} apiKey={client.api_key} />}
     </div>
   );
 }

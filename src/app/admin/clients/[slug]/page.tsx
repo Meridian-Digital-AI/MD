@@ -6,6 +6,8 @@ import { StatCard } from '@/components/dashboard/StatCard';
 import { computeClientHealth } from '@/lib/dashboard/computeClientHealth';
 import ClientApiKeyCard from './ClientApiKeyCard';
 import RecentLeadsList from './RecentLeadsList';
+import MetaAdAccountPicker from './MetaAdAccountPicker';
+import MetaInsightsPanel from './MetaInsightsPanel';
 
 export default async function AdminClientPage({
   params,
@@ -17,7 +19,7 @@ export default async function AdminClientPage({
 
   const { data: client } = await supabase
     .from('clients')
-    .select('id, business_name, slug, package_tier, domain, health_score, health_score_notes, created_at, api_key')
+    .select('id, business_name, slug, package_tier, domain, health_score, health_score_notes, created_at, api_key, meta_ad_account_id')
     .eq('slug', slug)
     .single();
   if (!client) notFound();
@@ -113,6 +115,11 @@ export default async function AdminClientPage({
             ))}
           </ul>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        <MetaAdAccountPicker slug={client.slug} initialId={client.meta_ad_account_id ?? null} />
+        <MetaInsightsPanel metaAdAccountId={client.meta_ad_account_id ?? null} />
       </div>
 
       {client.api_key && <ClientApiKeyCard slug={client.slug} apiKey={client.api_key} />}

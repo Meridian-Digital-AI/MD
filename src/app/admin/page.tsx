@@ -39,6 +39,12 @@ export default async function AdminHome() {
         <div className="flex items-center gap-4">
           <span className="text-sm text-slate-500">{clients?.length ?? 0} clients</span>
           <Link
+            href="/admin/settings"
+            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Settings
+          </Link>
+          <Link
             href="/admin/clients/new"
             className="rounded-lg bg-[var(--color-navy-900)] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90"
           >

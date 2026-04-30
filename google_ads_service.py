@@ -22,6 +22,27 @@ from models import GoogleAdsCampaign, PushResult
 BACKEND = os.environ.get("ADS_PUSH_BACKEND", "console").lower()
 
 
+# Characters Google Ads rejects in keyword text. Anything outside [a-z0-9 -']
+# we strip — covers %, $, @, *, ?, !, em-dashes, curly quotes, emoji, etc.
+# The keyword "100% cotton t-shirt" becomes "100 cotton t-shirt" — Google
+# accepts that, and the % wasn't doing semantic work anyway.
+import re as _re
+_KEYWORD_ALLOWED = _re.compile(r"[^a-zA-Z0-9 \-']")
+
+
+def _sanitise_keyword(text: str) -> str:
+    """Strip characters Google Ads rejects, collapse spaces, return clean text.
+
+    Returns "" for keywords that are empty/whitespace after sanitising — caller
+    should skip these rather than push them.
+    """
+    if not text:
+        return ""
+    cleaned = _KEYWORD_ALLOWED.sub(" ", text)
+    cleaned = " ".join(cleaned.split())  # collapse runs of whitespace
+    return cleaned.strip()
+
+
 def push_google_campaign(
     campaign: GoogleAdsCampaign,
     website_url: str | None = None,
@@ -160,13 +181,25 @@ def _push_live(
         errors_list = []
         details = {}
 
+        # Unique suffix so retries (and intentional re-pushes for the same
+        # client over time) don't collide with prior campaign/budget names.
+        # Google rejects duplicate names with "name is already assigned to
+        # another active or paused campaign".
+        from datetime import datetime as _dt
+        unique_suffix = _dt.now().strftime("%Y-%m-%d %H:%M")
+
         # 1. Create budget
         budget_service = client.get_service("CampaignBudgetService")
         budget_op = client.get_type("CampaignBudgetOperation")
         budget = budget_op.create
-        budget.name = f"{campaign.campaign_name} Budget"
+        budget.name = f"{campaign.campaign_name} Budget · {unique_suffix}"
         budget.amount_micros = int(campaign.daily_budget_gbp * 1_000_000)
         budget.delivery_method = client.enums.BudgetDeliveryMethodEnum.STANDARD
+        # Campaign-specific budget — required for non-portfolio bidding
+        # strategies like Maximize Conversions / Maximize Clicks. Without this
+        # Google treats it as shared and rejects the campaign with
+        # "Bidding strategy type is incompatible with shared budget".
+        budget.explicitly_shared = False
 
         budget_response = budget_service.mutate_campaign_budgets(
             customer_id=customer_id, operations=[budget_op]
@@ -178,21 +211,48 @@ def _push_live(
         campaign_service = client.get_service("CampaignService")
         campaign_op = client.get_type("CampaignOperation")
         camp = campaign_op.create
-        camp.name = campaign.campaign_name
+        camp.name = f"{campaign.campaign_name} · {unique_suffix}"
         camp.advertising_channel_type = client.enums.AdvertisingChannelTypeEnum.SEARCH
         camp.status = client.enums.CampaignStatusEnum.PAUSED
         camp.campaign_budget = budget_rn
 
-        # Bidding strategy
+        # Bidding strategy.
+        # Google Ads API v23 uses these embedded message names on Campaign:
+        #   maximize_conversions  → "Maximize Conversions" (needs conversion tracking)
+        #   target_spend          → "Maximize Clicks"      (no conversion tracking needed)
+        #
+        # The google-ads-python client uses proto-plus wrappers, where the way
+        # to "select" the bidding strategy is to set at least one sub-field on
+        # the embedded message. Setting CPC bid ceiling to £2 is a sensible
+        # default — high enough to avoid Google's "Too low" rejection, low
+        # enough to act as a real cap for sanity. Tune per campaign later.
+        DEFAULT_CPC_CEILING_MICROS = 2_000_000  # £2.00
         bs = campaign.bidding_strategy.lower()
-        if "maximize conversions" in bs or "maximise conversions" in bs:
-            camp.maximize_conversions.target_cpa_micros = 0
-        elif "maximize clicks" in bs or "maximise clicks" in bs:
-            camp.maximize_clicks.cpc_bid_ceiling_micros = 0
+        if "maximize clicks" in bs or "maximise clicks" in bs:
+            camp.target_spend.cpc_bid_ceiling_micros = DEFAULT_CPC_CEILING_MICROS
         elif "target cpa" in bs:
-            camp.maximize_conversions.target_cpa_micros = 0
+            camp.maximize_conversions.target_cpa_micros = DEFAULT_CPC_CEILING_MICROS
+        elif "maximize conversions" in bs or "maximise conversions" in bs:
+            camp.maximize_conversions.target_cpa_micros = DEFAULT_CPC_CEILING_MICROS
         else:
-            camp.maximize_conversions.target_cpa_micros = 0
+            # Default to Maximize Clicks — works on accounts without conversion tracking.
+            camp.target_spend.cpc_bid_ceiling_micros = DEFAULT_CPC_CEILING_MICROS
+
+        # Network settings — REQUIRED for Search campaigns. Without these,
+        # Google rejects with "field_error: REQUIRED — The required field was
+        # not present." Defaults: Google Search + Search Partners on, Display
+        # off (Display Network is for visual ads, not Search campaigns).
+        camp.network_settings.target_google_search = True
+        camp.network_settings.target_search_network = True
+        camp.network_settings.target_content_network = False
+        camp.network_settings.target_partner_search_network = False
+
+        # EU political advertising disclosure — REQUIRED on every campaign
+        # since Google's 2024 EU compliance changes. We're never running
+        # political ads for our clients (small businesses), so always say no.
+        camp.contains_eu_political_advertising = (
+            client.enums.EuPoliticalAdvertisingStatusEnum.DOES_NOT_CONTAIN_EU_POLITICAL_ADVERTISING
+        )
 
         campaign_response = campaign_service.mutate_campaigns(
             customer_id=customer_id, operations=[campaign_op]
@@ -245,11 +305,14 @@ def _push_live(
             # Keywords
             kw_ops = []
             for kw in ag.keywords:
+                cleaned = _sanitise_keyword(kw.keyword)
+                if not cleaned:
+                    continue  # skip keywords that are empty after stripping invalid chars
                 kw_op = client.get_type("AdGroupCriterionOperation")
                 kw_crit = kw_op.create
                 kw_crit.ad_group = ag_rn
                 kw_crit.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
-                kw_crit.keyword.text = kw.keyword
+                kw_crit.keyword.text = cleaned
                 match_map = {
                     "broad": client.enums.KeywordMatchTypeEnum.BROAD,
                     "phrase": client.enums.KeywordMatchTypeEnum.PHRASE,
@@ -262,11 +325,14 @@ def _push_live(
 
             # Negative keywords
             for neg in ag.negative_keywords:
+                cleaned = _sanitise_keyword(neg)
+                if not cleaned:
+                    continue
                 neg_op = client.get_type("AdGroupCriterionOperation")
                 neg_crit = neg_op.create
                 neg_crit.ad_group = ag_rn
                 neg_crit.negative = True
-                neg_crit.keyword.text = neg
+                neg_crit.keyword.text = cleaned
                 neg_crit.keyword.match_type = client.enums.KeywordMatchTypeEnum.BROAD
                 kw_ops.append(neg_op)
 
@@ -335,9 +401,17 @@ def _push_live(
         )
 
     except GoogleAdsException as ex:
-        error_msgs = [
-            f"{err.error_code}: {err.message}" for err in ex.failure.errors
-        ]
+        # Include the field_path so "REQUIRED — field was not present" tells
+        # us *which* field. Without this we get the generic message and have
+        # to guess.
+        error_msgs = []
+        for err in ex.failure.errors:
+            field_path = ""
+            if err.location and err.location.field_path_elements:
+                field_path = " on field=" + ".".join(
+                    fpe.field_name for fpe in err.location.field_path_elements
+                )
+            error_msgs.append(f"{err.error_code}: {err.message}{field_path}")
         return PushResult(
             platform="google_ads",
             success=False,

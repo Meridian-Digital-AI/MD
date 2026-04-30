@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Slow down a sec - Meridian Digital{% endblock %}
+
+{% block content %}
+<div class="card" style="text-align: center; padding: 3rem 2rem; max-width: 520px; margin: 3rem auto;">
+    <h2 style="margin-bottom: 0.75rem;">Slow down a sec</h2>
+    <p style="color:#444; margin-bottom: 1rem;">
+        You&rsquo;ve hit that action a bit too quickly. This limit is in place so the
+        AI doesn&rsquo;t get run in circles &mdash; it&rsquo;ll reset shortly.
+    </p>
+    {% if retry_after %}
+    <p class="muted small" style="margin-bottom: 1.5rem;">
+        Try again in about {{ retry_after }} seconds.
+    </p>
+    {% endif %}
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary">Back to dashboard</a>
+    <p class="muted small" style="margin-top: 1.5rem;">
+        Think this is a mistake? Email
+        <a href="mailto:hello@meridiandigital.co.uk">hello@meridiandigital.co.uk</a>
+        and we&rsquo;ll sort it.
+    </p>
+</div>
+{% endblock %}

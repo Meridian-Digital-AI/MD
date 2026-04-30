@@ -5,6 +5,10 @@
 *.db
 *.db-shm
 *.db-wal
+*.db.gz
+
+# Backup snapshots
+backups/
 
 # Python
 __pycache__/

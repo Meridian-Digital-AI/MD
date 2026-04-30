@@ -4,92 +4,82 @@
 {% block head %}
 <style>
     /* Kept inline-scoped to this page — consistent with the other templates. */
-    .edit-section {
-        margin-bottom: 2rem;
-    }
-    .edit-section h3 {
-        margin-top: 1.25rem;
-        margin-bottom: 0.5rem;
-    }
-    .edit-field {
-        margin-bottom: 0.9rem;
-    }
+    .edit-section { margin-bottom: 2rem; }
+    .edit-section h3 { margin-top: 1.25rem; margin-bottom: 0.5rem; }
+    .edit-field { margin-bottom: 0.9rem; }
     .edit-field label {
-        display: block;
-        font-size: 0.85rem;
-        color: #444;
-        font-weight: 500;
-        margin-bottom: 0.25rem;
+        display: block; font-size: 0.85rem; color: #444;
+        font-weight: 500; margin-bottom: 0.25rem;
     }
     .edit-field .label-meta {
-        color: #888;
-        font-weight: 400;
-        font-size: 0.8rem;
-        margin-left: 0.4rem;
+        color: #888; font-weight: 400; font-size: 0.8rem; margin-left: 0.4rem;
     }
-    .edit-input,
-    .edit-textarea {
-        width: 100%;
-        padding: 0.55rem 0.75rem;
-        border: 1px solid #d1d5db;
-        border-radius: 6px;
-        font-size: 0.95rem;
-        font-family: inherit;
-        line-height: 1.45;
+    .edit-input, .edit-textarea, .edit-select {
+        width: 100%; padding: 0.55rem 0.75rem;
+        border: 1px solid #d1d5db; border-radius: 6px;
+        font-size: 0.95rem; font-family: inherit; line-height: 1.45;
         background: #fff;
     }
-    .edit-input:focus,
-    .edit-textarea:focus {
-        outline: none;
-        border-color: #4f8cff;
+    .edit-select { appearance: auto; }
+    .edit-input:focus, .edit-textarea:focus, .edit-select:focus {
+        outline: none; border-color: #4f8cff;
         box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.15);
     }
-    .edit-textarea {
-        resize: vertical;
-        min-height: 3.2rem;
-    }
+    .edit-textarea { resize: vertical; min-height: 3.2rem; }
     .char-counter {
-        display: inline-block;
-        font-size: 0.75rem;
-        color: #888;
-        margin-top: 0.2rem;
+        display: inline-block; font-size: 0.75rem; color: #888; margin-top: 0.2rem;
     }
     .char-counter.near  { color: #b45309; }
     .char-counter.over  { color: #b91c1c; font-weight: 600; }
     .edit-ad-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 8px;
-        padding: 1rem 1.25rem;
-        margin-bottom: 1.25rem;
+        background: #f8fafc; border: 1px solid #e2e8f0;
+        border-radius: 8px; padding: 1rem 1.25rem; margin-bottom: 1.25rem;
     }
-    .edit-ad-card h4 {
-        margin: 0 0 0.5rem;
-        font-size: 1rem;
-    }
+    .edit-ad-card h4 { margin: 0 0 0.5rem; font-size: 1rem; }
     .edit-subhead {
-        font-size: 0.8rem;
-        font-weight: 600;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: #64748b;
-        margin: 0.75rem 0 0.4rem;
+        font-size: 0.8rem; font-weight: 600; text-transform: uppercase;
+        letter-spacing: 0.05em; color: #64748b; margin: 0.75rem 0 0.4rem;
     }
     .edit-actions {
-        display: flex;
-        gap: 0.75rem;
-        justify-content: flex-end;
-        align-items: center;
-        flex-wrap: wrap;
+        display: flex; gap: 0.75rem; justify-content: flex-end;
+        align-items: center; flex-wrap: wrap;
     }
     .edit-note {
-        background: #eff6ff;
-        border: 1px solid #bfdbfe;
-        color: #1e3a8a;
-        padding: 0.75rem 1rem;
-        border-radius: 8px;
-        font-size: 0.9rem;
-        margin-bottom: 1.25rem;
+        background: #eff6ff; border: 1px solid #bfdbfe; color: #1e3a8a;
+        padding: 0.75rem 1rem; border-radius: 8px;
+        font-size: 0.9rem; margin-bottom: 1.25rem;
+    }
+    /* Repeatable rows: an input + a small remove button */
+    .row-list > .row-item {
+        display: flex; align-items: flex-start; gap: 0.5rem;
+        margin-bottom: 0.55rem;
+    }
+    .row-list > .row-item .row-body { flex: 1; min-width: 0; }
+    .row-list > .row-item .row-remove {
+        flex: 0 0 auto;
+        background: #fff; border: 1px solid #e2e8f0; color: #991b1b;
+        padding: 0.45rem 0.65rem; border-radius: 6px; font-size: 0.78rem;
+        font-weight: 500; cursor: pointer; line-height: 1; height: 2.1rem;
+    }
+    .row-list > .row-item .row-remove:hover {
+        background: #fee2e2; border-color: #fca5a5;
+    }
+    /* Inline groups of fields inside one row (e.g. keyword + match type) */
+    .row-inline {
+        display: grid; grid-template-columns: 1fr 140px; gap: 0.5rem;
+    }
+    .add-row-btn {
+        background: #fff; border: 1px dashed #cbd5e1; color: #2563eb;
+        padding: 0.5rem 0.9rem; border-radius: 6px;
+        font-size: 0.85rem; font-weight: 500; cursor: pointer;
+        margin-top: 0.25rem;
+    }
+    .add-row-btn:hover { background: #eff6ff; border-color: #93c5fd; }
+    .audience-grid {
+        display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;
+    }
+    @media (max-width: 600px) {
+        .row-inline, .audience-grid { grid-template-columns: 1fr; }
     }
 </style>
 {% endblock %}
@@ -101,11 +91,12 @@
 </div>
 
 <div class="edit-note">
-    Tweak the ad copy below. Character counters will flag anything that&rsquo;s too long for the platform.
-    Keywords, audiences, and budgets stay as they are for now &mdash; message us if you need those changed.
+    Tweak ad copy, keywords, and audience settings. Use <strong>Add</strong> and
+    <strong>Remove</strong> to add or delete rows. Budgets and campaign structure
+    stay as they are for now &mdash; message us if you need those changed.
 </div>
 
-<form method="POST" action="/campaign/{{ campaign_id }}/edit" autocomplete="off">
+<form method="POST" action="/campaign/{{ campaign_id }}/edit" autocomplete="off" id="edit-form">
 
     {# ── Google Ads ───────────────────────────────────────────── #}
     {% if campaign.google_ads %}
@@ -113,112 +104,179 @@
     <div class="card edit-section">
         <h2>Google Ads &mdash; {{ g.campaign_name }}</h2>
 
+        {# ── Ad groups: keywords + negative keywords ────────────── #}
+        {% if g.ad_groups %}
+        <h3>Ad groups &amp; keywords</h3>
+        {% for ag in g.ad_groups %}
+        {% set ag_idx = loop.index0 %}
+        <div class="edit-ad-card">
+            <h4>{{ ag.name }}
+                <span style="color:#94a3b8; font-size:0.85rem; font-weight:400;">&mdash; {{ ag.theme }}</span>
+            </h4>
+
+            <div class="edit-subhead">Keywords
+                <span style="color:#94a3b8; text-transform:none; font-weight:400;">(broad, phrase, or exact match)</span>
+            </div>
+            <input type="hidden" name="array_paths" value="google_ads.ad_groups.{{ ag_idx }}.keywords">
+            <div class="row-list"
+                 data-array-path="google_ads.ad_groups.{{ ag_idx }}.keywords"
+                 data-row-kind="keyword">
+                {% for kw in ag.keywords %}
+                {% set k_idx = loop.index0 %}
+                <div class="row-item" data-row-index="{{ k_idx }}">
+                    <div class="row-body">
+                        <div class="row-inline">
+                            <input type="text" class="edit-input"
+                                   name="google_ads.ad_groups.{{ ag_idx }}.keywords.{{ k_idx }}.keyword"
+                                   value="{{ kw.keyword }}" placeholder="keyword phrase"
+                                   maxlength="80" data-maxchars="80" required>
+                            <select class="edit-select"
+                                    name="google_ads.ad_groups.{{ ag_idx }}.keywords.{{ k_idx }}.match_type">
+                                <option value="broad"  {% if kw.match_type == 'broad'  %}selected{% endif %}>Broad</option>
+                                <option value="phrase" {% if kw.match_type == 'phrase' %}selected{% endif %}>Phrase</option>
+                                <option value="exact"  {% if kw.match_type == 'exact'  %}selected{% endif %}>Exact</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="button" class="row-remove" aria-label="Remove keyword">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="add-row-btn"
+                    data-target="google_ads.ad_groups.{{ ag_idx }}.keywords">+ Add keyword</button>
+
+            <div class="edit-subhead" style="margin-top:1rem;">Negative keywords
+                <span style="color:#94a3b8; text-transform:none; font-weight:400;">(terms you don&rsquo;t want to match)</span>
+            </div>
+            <input type="hidden" name="array_paths" value="google_ads.ad_groups.{{ ag_idx }}.negative_keywords">
+            <div class="row-list"
+                 data-array-path="google_ads.ad_groups.{{ ag_idx }}.negative_keywords"
+                 data-row-kind="text">
+                {% for nk in ag.negative_keywords %}
+                {% set n_idx = loop.index0 %}
+                <div class="row-item" data-row-index="{{ n_idx }}">
+                    <div class="row-body">
+                        <input type="text" class="edit-input"
+                               name="google_ads.ad_groups.{{ ag_idx }}.negative_keywords.{{ n_idx }}"
+                               value="{{ nk }}" placeholder="negative keyword"
+                               maxlength="80" data-maxchars="80">
+                    </div>
+                    <button type="button" class="row-remove" aria-label="Remove negative keyword">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="add-row-btn"
+                    data-target="google_ads.ad_groups.{{ ag_idx }}.negative_keywords">+ Add negative keyword</button>
+        </div>
+        {% endfor %}
+        {% endif %}
+
+        {# ── Responsive search ads ───────────────────────────────── #}
         {% for ad in g.ads %}
         {% set ad_idx = loop.index0 %}
         <div class="edit-ad-card">
             <h4>{{ ad.ad_group }}</h4>
 
-            <div class="edit-subhead">Headlines <span style="color:#94a3b8; text-transform:none; font-weight:400;">(max 30 chars each)</span></div>
-            {% for h in ad.headlines %}
-            {% set h_idx = loop.index0 %}
-            <div class="edit-field">
-                <input
-                    type="text"
-                    class="edit-input"
-                    name="google_ads.ads.{{ ad_idx }}.headlines.{{ h_idx }}"
-                    value="{{ h }}"
-                    maxlength="30"
-                    data-maxchars="30"
-                    required>
-                <span class="char-counter">0/30</span>
+            <div class="edit-subhead">Headlines <span style="color:#94a3b8; text-transform:none; font-weight:400;">(3&ndash;15, max 30 chars each)</span></div>
+            <input type="hidden" name="array_paths" value="google_ads.ads.{{ ad_idx }}.headlines">
+            <div class="row-list"
+                 data-array-path="google_ads.ads.{{ ad_idx }}.headlines"
+                 data-row-kind="counted"
+                 data-maxchars="30">
+                {% for h in ad.headlines %}
+                {% set h_idx = loop.index0 %}
+                <div class="row-item" data-row-index="{{ h_idx }}">
+                    <div class="row-body">
+                        <input type="text" class="edit-input"
+                               name="google_ads.ads.{{ ad_idx }}.headlines.{{ h_idx }}"
+                               value="{{ h }}" maxlength="30" data-maxchars="30" required>
+                        <span class="char-counter">0/30</span>
+                    </div>
+                    <button type="button" class="row-remove" aria-label="Remove headline">Remove</button>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            <button type="button" class="add-row-btn"
+                    data-target="google_ads.ads.{{ ad_idx }}.headlines">+ Add headline</button>
 
-            <div class="edit-subhead">Descriptions <span style="color:#94a3b8; text-transform:none; font-weight:400;">(max 90 chars each)</span></div>
-            {% for d in ad.descriptions %}
-            {% set d_idx = loop.index0 %}
-            <div class="edit-field">
-                <textarea
-                    class="edit-textarea"
-                    name="google_ads.ads.{{ ad_idx }}.descriptions.{{ d_idx }}"
-                    maxlength="90"
-                    data-maxchars="90"
-                    required>{{ d }}</textarea>
-                <span class="char-counter">0/90</span>
+            <div class="edit-subhead" style="margin-top:1rem;">Descriptions <span style="color:#94a3b8; text-transform:none; font-weight:400;">(2&ndash;4, max 90 chars each)</span></div>
+            <input type="hidden" name="array_paths" value="google_ads.ads.{{ ad_idx }}.descriptions">
+            <div class="row-list"
+                 data-array-path="google_ads.ads.{{ ad_idx }}.descriptions"
+                 data-row-kind="counted-textarea"
+                 data-maxchars="90">
+                {% for d in ad.descriptions %}
+                {% set d_idx = loop.index0 %}
+                <div class="row-item" data-row-index="{{ d_idx }}">
+                    <div class="row-body">
+                        <textarea class="edit-textarea"
+                                  name="google_ads.ads.{{ ad_idx }}.descriptions.{{ d_idx }}"
+                                  maxlength="90" data-maxchars="90" required>{{ d }}</textarea>
+                        <span class="char-counter">0/90</span>
+                    </div>
+                    <button type="button" class="row-remove" aria-label="Remove description">Remove</button>
+                </div>
+                {% endfor %}
             </div>
-            {% endfor %}
+            <button type="button" class="add-row-btn"
+                    data-target="google_ads.ads.{{ ad_idx }}.descriptions">+ Add description</button>
         </div>
         {% endfor %}
 
-        {% if g.callout_extensions %}
-        <h3>Callout Extensions <span style="color:#94a3b8; font-size:0.85rem; font-weight:400;">(max 25 chars each)</span></h3>
-        {% for c in g.callout_extensions %}
-        {% set c_idx = loop.index0 %}
-        <div class="edit-field">
-            <input
-                type="text"
-                class="edit-input"
-                name="google_ads.callout_extensions.{{ c_idx }}"
-                value="{{ c }}"
-                maxlength="25"
-                data-maxchars="25"
-                required>
-            <span class="char-counter">0/25</span>
+        {# ── Callouts ────────────────────────────────────────────── #}
+        <h3>Callout extensions <span style="color:#94a3b8; font-size:0.85rem; font-weight:400;">(max 25 chars each)</span></h3>
+        <input type="hidden" name="array_paths" value="google_ads.callout_extensions">
+        <div class="row-list"
+             data-array-path="google_ads.callout_extensions"
+             data-row-kind="counted"
+             data-maxchars="25">
+            {% for c in g.callout_extensions or [] %}
+            {% set c_idx = loop.index0 %}
+            <div class="row-item" data-row-index="{{ c_idx }}">
+                <div class="row-body">
+                    <input type="text" class="edit-input"
+                           name="google_ads.callout_extensions.{{ c_idx }}"
+                           value="{{ c }}" maxlength="25" data-maxchars="25">
+                    <span class="char-counter">0/25</span>
+                </div>
+                <button type="button" class="row-remove" aria-label="Remove callout">Remove</button>
+            </div>
+            {% endfor %}
         </div>
-        {% endfor %}
-        {% endif %}
+        <button type="button" class="add-row-btn" data-target="google_ads.callout_extensions">+ Add callout</button>
 
+        {# ── Sitelinks ───────────────────────────────────────────── #}
         {% if g.sitelink_extensions %}
-        <h3>Sitelink Extensions</h3>
+        <h3 style="margin-top:1.5rem;">Sitelink extensions</h3>
         {% for sl in g.sitelink_extensions %}
         {% set sl_idx = loop.index0 %}
         <div class="edit-ad-card">
             <div class="edit-field">
                 <label>Link text <span class="label-meta">max 25</span></label>
-                <input
-                    type="text"
-                    class="edit-input"
-                    name="google_ads.sitelink_extensions.{{ sl_idx }}.link_text"
-                    value="{{ sl.link_text }}"
-                    maxlength="25"
-                    data-maxchars="25"
-                    required>
+                <input type="text" class="edit-input"
+                       name="google_ads.sitelink_extensions.{{ sl_idx }}.link_text"
+                       value="{{ sl.link_text }}" maxlength="25" data-maxchars="25" required>
                 <span class="char-counter">0/25</span>
             </div>
             <div class="edit-field">
                 <label>Description 1 <span class="label-meta">max 35</span></label>
-                <input
-                    type="text"
-                    class="edit-input"
-                    name="google_ads.sitelink_extensions.{{ sl_idx }}.description_1"
-                    value="{{ sl.description_1 }}"
-                    maxlength="35"
-                    data-maxchars="35"
-                    required>
+                <input type="text" class="edit-input"
+                       name="google_ads.sitelink_extensions.{{ sl_idx }}.description_1"
+                       value="{{ sl.description_1 }}" maxlength="35" data-maxchars="35" required>
                 <span class="char-counter">0/35</span>
             </div>
             <div class="edit-field">
                 <label>Description 2 <span class="label-meta">max 35</span></label>
-                <input
-                    type="text"
-                    class="edit-input"
-                    name="google_ads.sitelink_extensions.{{ sl_idx }}.description_2"
-                    value="{{ sl.description_2 }}"
-                    maxlength="35"
-                    data-maxchars="35"
-                    required>
+                <input type="text" class="edit-input"
+                       name="google_ads.sitelink_extensions.{{ sl_idx }}.description_2"
+                       value="{{ sl.description_2 }}" maxlength="35" data-maxchars="35" required>
                 <span class="char-counter">0/35</span>
             </div>
             <div class="edit-field">
                 <label>Landing page path <span class="label-meta">e.g. /contact</span></label>
-                <input
-                    type="text"
-                    class="edit-input"
-                    name="google_ads.sitelink_extensions.{{ sl_idx }}.final_url_path"
-                    value="{{ sl.final_url_path }}"
-                    maxlength="100"
-                    data-maxchars="100"
-                    required>
+                <input type="text" class="edit-input"
+                       name="google_ads.sitelink_extensions.{{ sl_idx }}.final_url_path"
+                       value="{{ sl.final_url_path }}" maxlength="100" data-maxchars="100" required>
                 <span class="char-counter">0/100</span>
             </div>
         </div>
@@ -233,6 +291,101 @@
     <div class="card edit-section">
         <h2>Meta Ads &mdash; {{ m.campaign_name }}</h2>
 
+        {# ── Audience ────────────────────────────────────────────── #}
+        {% if m.audience %}
+        {% set a = m.audience %}
+        <h3>Audience</h3>
+        <div class="edit-ad-card">
+            <div class="audience-grid">
+                <div class="edit-field">
+                    <label>Age min</label>
+                    <input type="number" class="edit-input"
+                           name="meta_ads.audience.age_min"
+                           value="{{ a.age_min }}" min="13" max="65" required>
+                </div>
+                <div class="edit-field">
+                    <label>Age max</label>
+                    <input type="number" class="edit-input"
+                           name="meta_ads.audience.age_max"
+                           value="{{ a.age_max }}" min="13" max="65" required>
+                </div>
+            </div>
+            <div class="edit-field">
+                <label>Gender</label>
+                <select class="edit-select" name="meta_ads.audience.genders">
+                    <option value="all"    {% if a.genders == 'all'    %}selected{% endif %}>All</option>
+                    <option value="male"   {% if a.genders == 'male'   %}selected{% endif %}>Male</option>
+                    <option value="female" {% if a.genders == 'female' %}selected{% endif %}>Female</option>
+                </select>
+            </div>
+            <div class="edit-field">
+                <label>Lookalike suggestion <span class="label-meta">e.g. &ldquo;1% lookalike of website visitors&rdquo;</span></label>
+                <input type="text" class="edit-input"
+                       name="meta_ads.audience.lookalike_suggestion"
+                       value="{{ a.lookalike_suggestion }}" maxlength="200" data-maxchars="200">
+                <span class="char-counter">0/200</span>
+            </div>
+
+            <div class="edit-subhead">Interests</div>
+            <input type="hidden" name="array_paths" value="meta_ads.audience.interests">
+            <div class="row-list"
+                 data-array-path="meta_ads.audience.interests"
+                 data-row-kind="text">
+                {% for it in a.interests or [] %}
+                {% set i_idx = loop.index0 %}
+                <div class="row-item" data-row-index="{{ i_idx }}">
+                    <div class="row-body">
+                        <input type="text" class="edit-input"
+                               name="meta_ads.audience.interests.{{ i_idx }}"
+                               value="{{ it }}" maxlength="80" data-maxchars="80">
+                    </div>
+                    <button type="button" class="row-remove" aria-label="Remove interest">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="add-row-btn" data-target="meta_ads.audience.interests">+ Add interest</button>
+
+            <div class="edit-subhead" style="margin-top:1rem;">Behaviours</div>
+            <input type="hidden" name="array_paths" value="meta_ads.audience.behaviours">
+            <div class="row-list"
+                 data-array-path="meta_ads.audience.behaviours"
+                 data-row-kind="text">
+                {% for b in a.behaviours or [] %}
+                {% set b_idx = loop.index0 %}
+                <div class="row-item" data-row-index="{{ b_idx }}">
+                    <div class="row-body">
+                        <input type="text" class="edit-input"
+                               name="meta_ads.audience.behaviours.{{ b_idx }}"
+                               value="{{ b }}" maxlength="80" data-maxchars="80">
+                    </div>
+                    <button type="button" class="row-remove" aria-label="Remove behaviour">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="add-row-btn" data-target="meta_ads.audience.behaviours">+ Add behaviour</button>
+
+            <div class="edit-subhead" style="margin-top:1rem;">Locations</div>
+            <input type="hidden" name="array_paths" value="meta_ads.audience.locations">
+            <div class="row-list"
+                 data-array-path="meta_ads.audience.locations"
+                 data-row-kind="text">
+                {% for loc in a.locations or [] %}
+                {% set l_idx = loop.index0 %}
+                <div class="row-item" data-row-index="{{ l_idx }}">
+                    <div class="row-body">
+                        <input type="text" class="edit-input"
+                               name="meta_ads.audience.locations.{{ l_idx }}"
+                               value="{{ loc }}" maxlength="120" data-maxchars="120">
+                    </div>
+                    <button type="button" class="row-remove" aria-label="Remove location">Remove</button>
+                </div>
+                {% endfor %}
+            </div>
+            <button type="button" class="add-row-btn" data-target="meta_ads.audience.locations">+ Add location</button>
+        </div>
+        {% endif %}
+
+        {# ── Meta ads ────────────────────────────────────────────── #}
         {% for ad in m.ads %}
         {% set ad_idx = loop.index0 %}
         <div class="edit-ad-card">
@@ -240,49 +393,33 @@
 
             <div class="edit-field">
                 <label>Primary text <span class="label-meta">keep under 125 for preview</span></label>
-                <textarea
-                    class="edit-textarea"
-                    name="meta_ads.ads.{{ ad_idx }}.primary_text"
-                    maxlength="500"
-                    data-maxchars="125"
-                    required>{{ ad.primary_text }}</textarea>
+                <textarea class="edit-textarea"
+                          name="meta_ads.ads.{{ ad_idx }}.primary_text"
+                          maxlength="500" data-maxchars="125" required>{{ ad.primary_text }}</textarea>
                 <span class="char-counter">0/125</span>
             </div>
 
             <div class="edit-field">
                 <label>Headline <span class="label-meta">max 40</span></label>
-                <input
-                    type="text"
-                    class="edit-input"
-                    name="meta_ads.ads.{{ ad_idx }}.headline"
-                    value="{{ ad.headline }}"
-                    maxlength="40"
-                    data-maxchars="40"
-                    required>
+                <input type="text" class="edit-input"
+                       name="meta_ads.ads.{{ ad_idx }}.headline"
+                       value="{{ ad.headline }}" maxlength="40" data-maxchars="40" required>
                 <span class="char-counter">0/40</span>
             </div>
 
             <div class="edit-field">
                 <label>Description <span class="label-meta">max 30, shown under headline</span></label>
-                <input
-                    type="text"
-                    class="edit-input"
-                    name="meta_ads.ads.{{ ad_idx }}.description"
-                    value="{{ ad.description }}"
-                    maxlength="30"
-                    data-maxchars="30"
-                    required>
+                <input type="text" class="edit-input"
+                       name="meta_ads.ads.{{ ad_idx }}.description"
+                       value="{{ ad.description }}" maxlength="30" data-maxchars="30" required>
                 <span class="char-counter">0/30</span>
             </div>
 
             <div class="edit-field">
                 <label>Visual brief <span class="label-meta">what the image/video should show</span></label>
-                <textarea
-                    class="edit-textarea"
-                    name="meta_ads.ads.{{ ad_idx }}.visual_brief"
-                    maxlength="400"
-                    data-maxchars="300"
-                    required>{{ ad.visual_brief }}</textarea>
+                <textarea class="edit-textarea"
+                          name="meta_ads.ads.{{ ad_idx }}.visual_brief"
+                          maxlength="400" data-maxchars="300" required>{{ ad.visual_brief }}</textarea>
                 <span class="char-counter">0/300</span>
             </div>
         </div>
@@ -299,22 +436,171 @@
 
 {% block scripts %}
 <script>
-    // Character counters. Each .edit-input / .edit-textarea sits next to a
-    // .char-counter span; we update the count + warning classes as they type.
-    document.querySelectorAll('.edit-input, .edit-textarea').forEach(function (el) {
-        var counter = el.parentElement.querySelector('.char-counter');
+    // ─── Character counters ─────────────────────────────────────────────
+    // Each .edit-input/.edit-textarea with data-maxchars sits next to a
+    // .char-counter span; update count + warning classes as they type.
+    function wireCounter(el) {
+        if (!el || !el.dataset.maxchars) return;
+        var counter = el.parentElement && el.parentElement.querySelector('.char-counter');
         if (!counter) return;
         var max = parseInt(el.dataset.maxchars, 10) || 0;
-
         function update() {
             var len = el.value.length;
             counter.textContent = len + '/' + max;
             counter.classList.toggle('over', len > max);
             counter.classList.toggle('near', len > max * 0.85 && len <= max);
         }
-
         el.addEventListener('input', update);
         update();
+    }
+    document.querySelectorAll('.edit-input, .edit-textarea').forEach(wireCounter);
+
+    // ─── Add/remove row handling ────────────────────────────────────────
+    // After any add/remove, the indices in every input's name attribute
+    // inside that .row-list get renumbered 0..N-1 so the backend's array
+    // rebuild sees a clean sequence (no gaps, no duplicates).
+
+    function renumber(list) {
+        var path = list.dataset.arrayPath;
+        if (!path) return;
+        var prefix = path + '.';
+        Array.prototype.forEach.call(list.children, function (row, i) {
+            row.dataset.rowIndex = String(i);
+            row.querySelectorAll('[name]').forEach(function (input) {
+                var name = input.getAttribute('name');
+                if (!name.startsWith(prefix)) return;
+                var tail = name.slice(prefix.length);
+                // Either `N` (primitive) or `N.field` (dict-array)
+                var dot = tail.indexOf('.');
+                if (dot === -1) {
+                    input.setAttribute('name', prefix + i);
+                } else {
+                    input.setAttribute('name', prefix + i + tail.slice(dot));
+                }
+            });
+        });
+    }
+
+    function buildRow(list) {
+        var path = list.dataset.arrayPath;
+        var kind = list.dataset.rowKind || 'text';
+        var idx = list.children.length;  // will be correct after renumber()
+        var max = parseInt(list.dataset.maxchars, 10) || 0;
+
+        var row = document.createElement('div');
+        row.className = 'row-item';
+        row.dataset.rowIndex = String(idx);
+
+        var body = document.createElement('div');
+        body.className = 'row-body';
+
+        if (kind === 'keyword') {
+            var inline = document.createElement('div');
+            inline.className = 'row-inline';
+
+            var kwInput = document.createElement('input');
+            kwInput.type = 'text';
+            kwInput.className = 'edit-input';
+            kwInput.name = path + '.' + idx + '.keyword';
+            kwInput.placeholder = 'keyword phrase';
+            kwInput.maxLength = 80;
+            kwInput.dataset.maxchars = '80';
+            kwInput.required = true;
+
+            var mtSel = document.createElement('select');
+            mtSel.className = 'edit-select';
+            mtSel.name = path + '.' + idx + '.match_type';
+            ['broad', 'phrase', 'exact'].forEach(function (mt) {
+                var opt = document.createElement('option');
+                opt.value = mt;
+                opt.textContent = mt.charAt(0).toUpperCase() + mt.slice(1);
+                mtSel.appendChild(opt);
+            });
+
+            inline.appendChild(kwInput);
+            inline.appendChild(mtSel);
+            body.appendChild(inline);
+        } else if (kind === 'counted-textarea') {
+            var ta = document.createElement('textarea');
+            ta.className = 'edit-textarea';
+            ta.name = path + '.' + idx;
+            ta.maxLength = max || 500;
+            ta.dataset.maxchars = String(max || 90);
+            ta.required = true;
+            body.appendChild(ta);
+
+            var counter1 = document.createElement('span');
+            counter1.className = 'char-counter';
+            counter1.textContent = '0/' + (max || 90);
+            body.appendChild(counter1);
+        } else {
+            // 'text' or 'counted' — single input
+            var input = document.createElement('input');
+            input.type = 'text';
+            input.className = 'edit-input';
+            input.name = path + '.' + idx;
+            if (max) {
+                input.maxLength = max;
+                input.dataset.maxchars = String(max);
+            }
+            body.appendChild(input);
+
+            if (kind === 'counted') {
+                var counter2 = document.createElement('span');
+                counter2.className = 'char-counter';
+                counter2.textContent = '0/' + max;
+                body.appendChild(counter2);
+            }
+        }
+
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'row-remove';
+        remove.textContent = 'Remove';
+        remove.setAttribute('aria-label', 'Remove row');
+
+        row.appendChild(body);
+        row.appendChild(remove);
+        return row;
+    }
+
+    // + Add handler
+    document.querySelectorAll('.add-row-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            var path = btn.dataset.target;
+            var list = document.querySelector('.row-list[data-array-path="' + path + '"]');
+            if (!list) return;
+            var row = buildRow(list);
+            list.appendChild(row);
+            // Wire counters for the new fields
+            row.querySelectorAll('.edit-input, .edit-textarea').forEach(wireCounter);
+            renumber(list);
+            // Focus the first input in the new row for quick typing
+            var firstField = row.querySelector('input, textarea, select');
+            if (firstField) firstField.focus();
+        });
+    });
+
+    // Remove handler (event delegation — handles rows added later too)
+    document.addEventListener('click', function (e) {
+        var btn = e.target.closest && e.target.closest('.row-remove');
+        if (!btn) return;
+        var row = btn.closest('.row-item');
+        var list = row && row.closest('.row-list');
+        if (!row || !list) return;
+        // Keep at least one row where the schema demands it (required inputs)
+        var hasRequired = row.querySelector('[required]');
+        if (hasRequired && list.children.length <= 1) {
+            // Instead of removing, just clear — the backend will drop blank
+            // rows, but this keeps at least one visible for the user.
+            row.querySelectorAll('input, textarea').forEach(function (el) {
+                if (el.type !== 'hidden') el.value = '';
+            });
+            renumber(list);
+            return;
+        }
+        row.remove();
+        renumber(list);
     });
 </script>
 {% endblock %}

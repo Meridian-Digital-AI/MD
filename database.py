@@ -305,3 +305,81 @@ def update_customer_plan(customer_id, plan, stripe_customer_id=None):
         )
     conn.commit()
     conn.close()
+
+
+def deactivate_customer_by_stripe_id(stripe_customer_id):
+    """Flip a customer to inactive. Called when Stripe fires a cancellation
+    webhook. Clears the session token too so they get bounced on next request.
+    Returns the customer's email if we knew them, else None.
+    """
+    conn = get_db()
+    row = conn.execute(
+        "SELECT email FROM customers WHERE stripe_customer_id = ?",
+        (stripe_customer_id,),
+    ).fetchone()
+    if not row:
+        conn.close()
+        return None
+    conn.execute(
+        """UPDATE customers
+           SET subscription_status = 'canceled',
+               session_token = NULL
+           WHERE stripe_customer_id = ?""",
+        (stripe_customer_id,),
+    )
+    conn.commit()
+    conn.close()
+    return row["email"]
+
+
+def deactivate_customer_by_email(email):
+    """Fallback for webhook events that only include an email."""
+    conn = get_db()
+    email_clean = (email or "").strip().lower()
+    conn.execute(
+        """UPDATE customers
+           SET subscription_status = 'canceled',
+               session_token = NULL
+           WHERE email = ?""",
+        (email_clean,),
+    )
+    conn.commit()
+    conn.close()
+
+
+# ─── Admin queries ────────────────────────────────────────────────────────────
+
+def get_all_customers_with_campaign_counts():
+    """Admin-only: every customer + how many campaigns they've created, newest
+    first. Used to populate the admin dashboard.
+    """
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT c.id, c.email, c.plan, c.subscription_status,
+                  c.stripe_customer_id, c.created_at,
+                  COUNT(ca.id) AS campaign_count,
+                  MAX(ca.created_at) AS latest_campaign_at
+           FROM customers c
+           LEFT JOIN campaigns ca ON ca.customer_id = c.id
+           GROUP BY c.id
+           ORDER BY c.id DESC"""
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]
+
+
+def get_all_campaigns():
+    """Admin-only: every campaign across every customer, newest first."""
+    conn = get_db()
+    rows = conn.execute(
+        """SELECT ca.id, ca.status, ca.error_message, ca.created_at,
+                  ca.google_push_status, ca.meta_push_status,
+                  cu.email AS customer_email,
+                  s.business_name, s.monthly_budget
+           FROM campaigns ca
+           JOIN customers cu ON ca.customer_id = cu.id
+           JOIN submissions s ON ca.submission_id = s.id
+           ORDER BY ca.id DESC"""
+    ).fetchall()
+    conn.close()
+    return [dict(r) for r in rows]

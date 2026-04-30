@@ -4,6 +4,8 @@ Generates Google Ads and Meta Ads campaigns from business information
 using Claude Opus 4.6 with adaptive thinking and structured output.
 """
 
+from __future__ import annotations
+
 import os
 import json
 import anthropic

@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+{% block title %}Admin - Meridian Digital{% endblock %}
+
+{% block head %}
+<style>
+    .admin-header { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:1.25rem; flex-wrap:wrap; gap:0.5rem; }
+    .admin-header .admin-meta { color:#6b7280; font-size:0.9rem; }
+    .admin-tabs { display:flex; gap:0.5rem; margin-bottom:1rem; border-bottom:1px solid #e5e7eb; }
+    .admin-tab {
+        background:transparent; border:none; padding:0.6rem 1rem;
+        font-size:0.95rem; color:#475569; cursor:pointer;
+        border-bottom:2px solid transparent;
+    }
+    .admin-tab.active { color:#1a1a2e; border-bottom-color:#4f8cff; font-weight:600; }
+    .admin-panel { display:none; }
+    .admin-panel.active { display:block; }
+    .admin-table {
+        width:100%; border-collapse:collapse; font-size:0.9rem;
+        background:#fff; border:1px solid #e5e7eb; border-radius:8px;
+        overflow:hidden;
+    }
+    .admin-table th, .admin-table td {
+        padding:0.6rem 0.8rem; text-align:left; vertical-align:top;
+        border-bottom:1px solid #f1f5f9;
+    }
+    .admin-table th {
+        background:#f8fafc; font-size:0.75rem; text-transform:uppercase;
+        letter-spacing:0.05em; color:#64748b; font-weight:600;
+    }
+    .admin-table tr:last-child td { border-bottom:none; }
+    .admin-table tr:hover td { background:#fafbfc; }
+    .admin-badge {
+        display:inline-block; font-size:0.72rem; padding:0.15rem 0.5rem;
+        border-radius:12px; font-weight:600; text-transform:uppercase;
+        letter-spacing:0.03em;
+    }
+    .admin-badge.active    { background:#dcfce7; color:#166534; }
+    .admin-badge.canceled  { background:#fee2e2; color:#991b1b; }
+    .admin-badge.none      { background:#e5e7eb; color:#4b5563; }
+    .admin-badge.ready     { background:#dbeafe; color:#1e40af; }
+    .admin-badge.approved  { background:#dcfce7; color:#166534; }
+    .admin-badge.generating{ background:#fef3c7; color:#92400e; }
+    .admin-badge.error     { background:#fee2e2; color:#991b1b; }
+    .admin-badge.pushing   { background:#ede9fe; color:#6d28d9; }
+    .admin-badge.pushed    { background:#cffafe; color:#155e75; }
+    .admin-badge.push_failed { background:#fee2e2; color:#991b1b; }
+    .admin-empty { padding:2rem; text-align:center; color:#6b7280; background:#f9fafb; border-radius:8px; }
+    .admin-date { color:#6b7280; font-size:0.82rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-header">
+    <div>
+        <h1 style="margin:0 0 0.2rem;">Admin</h1>
+        <div class="admin-meta">Signed in as <strong>{{ admin_email }}</strong></div>
+    </div>
+    <div class="admin-meta">
+        {{ customers|length }} customers &middot; {{ campaigns|length }} campaigns
+    </div>
+</div>
+
+<div class="admin-tabs">
+    <button type="button" class="admin-tab active" data-panel="customers">Customers ({{ customers|length }})</button>
+    <button type="button" class="admin-tab" data-panel="campaigns">Campaigns ({{ campaigns|length }})</button>
+</div>
+
+<div class="admin-panel active" id="panel-customers">
+    {% if customers %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>Email</th>
+                <th>Plan</th>
+                <th>Status</th>
+                <th>Campaigns</th>
+                <th>Joined</th>
+                <th>Last campaign</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in customers %}
+            <tr>
+                <td>{{ c.email }}</td>
+                <td>{{ c.plan or '—' }}</td>
+                <td>
+                    {% set s = c.subscription_status or 'none' %}
+                    <span class="admin-badge {{ s }}">{{ s }}</span>
+                </td>
+                <td>{{ c.campaign_count }}</td>
+                <td class="admin-date">{{ c.created_at }}</td>
+                <td class="admin-date">{{ c.latest_campaign_at or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="admin-empty">No customers yet.</div>
+    {% endif %}
+</div>
+
+<div class="admin-panel" id="panel-campaigns">
+    {% if campaigns %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Business</th>
+                <th>Customer</th>
+                <th>Status</th>
+                <th>Google</th>
+                <th>Meta</th>
+                <th>Budget</th>
+                <th>Created</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ca in campaigns %}
+            <tr>
+                <td>{{ ca.id }}</td>
+                <td>{{ ca.business_name }}</td>
+                <td>{{ ca.customer_email }}</td>
+                <td><span class="admin-badge {{ ca.status }}">{{ ca.status }}</span></td>
+                <td><span class="admin-badge {{ ca.google_push_status or 'none' }}">{{ ca.google_push_status or '—' }}</span></td>
+                <td><span class="admin-badge {{ ca.meta_push_status or 'none' }}">{{ ca.meta_push_status or '—' }}</span></td>
+                <td>£{{ '%.0f'|format(ca.monthly_budget) }}</td>
+                <td class="admin-date">{{ ca.created_at }}</td>
+                <td><a href="/campaign/{{ ca.id }}" class="btn btn-secondary btn-sm">Open</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="admin-empty">No campaigns yet.</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Simple tab switcher — no framework, just two panels toggling.
+    document.querySelectorAll('.admin-tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.admin-tab').forEach(function (b) { b.classList.remove('active'); });
+            document.querySelectorAll('.admin-panel').forEach(function (p) { p.classList.remove('active'); });
+            btn.classList.add('active');
+            var target = document.getElementById('panel-' + btn.dataset.panel);
+            if (target) target.classList.add('active');
+        });
+    });
+</script>
+{% endblock %}

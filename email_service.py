@@ -10,6 +10,8 @@ Configure via env vars:
   RESEND_API_KEY   = re_xxxxx (only needed for resend backend)
 """
 
+from __future__ import annotations
+
 import os
 import html as html_mod
 import logging
@@ -66,9 +68,97 @@ def _send_resend(to: str, subject: str, html: str, text: str) -> bool:
 
 
 # ─── Email templates ─────────────────────────────────────────────────────────
+#
+# Every customer-facing email is built by _layout() so headers, typography,
+# CTA buttons, and the footer stay consistent. Writing email HTML is the
+# worst — we aim for table-free flex-y structure that degrades gracefully
+# in Outlook/Gmail alike, with generous inline styles because lots of
+# email clients strip <style> tags.
+
+
+def _layout(
+    *,
+    title: str,
+    preheader: str,
+    body_html: str,
+    cta_label: str | None = None,
+    cta_url: str | None = None,
+    accent: str = "#4f8cff",
+) -> str:
+    """Wrap body_html in Meridian-branded email chrome.
+
+    - preheader: hidden preview text that shows in inbox list views
+    - accent:    colour for the top strip + CTA (blue by default; green for
+                 approvals, amber for action-required, etc.)
+    """
+    cta_html = ""
+    if cta_label and cta_url:
+        cta_html = f"""
+        <p style="margin:28px 0 8px;">
+          <a href="{cta_url}" style="display:inline-block;background:{accent};
+            color:#ffffff;padding:13px 26px;border-radius:8px;
+            text-decoration:none;font-weight:600;font-size:15px;
+            letter-spacing:0.01em;">{cta_label}</a>
+        </p>"""
+
+    return f"""\
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{html_mod.escape(title)}</title>
+</head>
+<body style="margin:0;padding:0;background:#f5f7fb;
+             font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,
+             'Helvetica Neue',Arial,sans-serif;color:#1a1a2e;">
+  <!-- Preheader: hidden but pulled into inbox preview -->
+  <div style="display:none;max-height:0;overflow:hidden;opacity:0;">
+    {html_mod.escape(preheader)}
+  </div>
+
+  <div style="max-width:600px;margin:0 auto;padding:24px 16px;">
+    <!-- Brand strip -->
+    <div style="background:{accent};height:4px;border-radius:4px 4px 0 0;"></div>
+
+    <!-- Card -->
+    <div style="background:#ffffff;border:1px solid #e5e7eb;border-top:none;
+                border-radius:0 0 12px 12px;padding:32px 36px;">
+      <div style="font-family:'Sora',-apple-system,sans-serif;font-weight:700;
+                  font-size:18px;color:#1a1a2e;margin-bottom:24px;
+                  letter-spacing:-0.01em;">
+        Meridian <span style="color:{accent};">Digital</span>
+      </div>
+
+      <div style="font-size:15px;line-height:1.6;color:#1f2937;">
+        {body_html}
+        {cta_html}
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div style="margin-top:24px;text-align:center;color:#6b7280;font-size:12px;
+                line-height:1.6;">
+      <div>Meridian Digital &middot; Exeter, Devon</div>
+      <div>
+        <a href="{APP_URL}/dashboard" style="color:#6b7280;text-decoration:underline;">Dashboard</a>
+        &nbsp;&middot;&nbsp;
+        <a href="{APP_URL}/privacy" style="color:#6b7280;text-decoration:underline;">Privacy</a>
+        &nbsp;&middot;&nbsp;
+        <a href="{APP_URL}/terms" style="color:#6b7280;text-decoration:underline;">Terms</a>
+      </div>
+      <div style="margin-top:6px;">
+        Questions? Reply to this email &mdash; we read every one.
+      </div>
+    </div>
+  </div>
+</body>
+</html>"""
+
 
 def send_welcome(to: str, business_name: str) -> bool:
     subject = "Welcome to Meridian Digital — your campaign is coming"
+    safe_name = html_mod.escape(business_name)
     text = (
         f"Hi {business_name},\n\n"
         f"Thanks for signing up to Meridian Digital! We're building your Google Ads "
@@ -77,46 +167,61 @@ def send_welcome(to: str, business_name: str) -> bool:
         f"Dashboard: {APP_URL}/dashboard\n\n"
         f"— The Meridian Digital team"
     )
-    html = f"""
-    <div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto;">
-      <h2 style="color: #1a1a2e;">Welcome to Meridian Digital 👋</h2>
-      <p>Hi <strong>{business_name}</strong>,</p>
-      <p>Thanks for signing up! Our AI is building your Google Ads and Meta Ads
-      campaigns right now.</p>
-      <p>You'll get another email as soon as your campaign is ready to review.</p>
-      <p><a href="{APP_URL}/dashboard"
-            style="display:inline-block;background:#4f8cff;color:#fff;padding:12px 20px;
-            border-radius:8px;text-decoration:none;font-weight:600;">Open Dashboard</a></p>
-      <p style="color:#6b7280;font-size:14px;">— The Meridian Digital team</p>
-    </div>
-    """
+    body = f"""
+      <h1 style="font-family:'Sora',sans-serif;font-size:22px;margin:0 0 16px;
+                 color:#1a1a2e;font-weight:700;">Welcome aboard</h1>
+      <p style="margin:0 0 14px;">Hi <strong>{safe_name}</strong>,</p>
+      <p style="margin:0 0 14px;">
+        Thanks for signing up. Our AI is building your Google Ads and Meta Ads
+        campaigns right now &mdash; usually takes a couple of minutes.
+      </p>
+      <p style="margin:0 0 14px;">
+        You&rsquo;ll get another email from us as soon as your campaign is ready
+        to review. Nothing goes live until you approve it.
+      </p>"""
+    html = _layout(
+        title="Welcome to Meridian Digital",
+        preheader="Your campaign is being built right now — we'll email when it's ready to review.",
+        body_html=body,
+        cta_label="Open dashboard",
+        cta_url=f"{APP_URL}/dashboard",
+    )
     return send_email(to, subject, html, text)
 
 
 def send_campaign_ready(to: str, business_name: str, campaign_id: int) -> bool:
     subject = f"Your {business_name} campaign is ready to review"
     review_url = f"{APP_URL}/campaign/{campaign_id}"
+    safe_name = html_mod.escape(business_name)
     text = (
         f"Good news — your AI-generated ad campaign is ready!\n\n"
         f"Review and approve it here: {review_url}\n\n"
         f"Once approved, we'll set it up on Google Ads and Meta Ads within 24 hours.\n\n"
         f"— The Meridian Digital team"
     )
-    html = f"""
-    <div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto;">
-      <h2 style="color: #1a1a2e;">Your campaign is ready 🚀</h2>
-      <p>Good news — your AI-generated campaign for <strong>{business_name}</strong>
-      is ready to review.</p>
-      <p>Take a look at the Google Ads keywords, ad copy, Meta audience targeting,
-      and creative briefs. If everything looks good, approve it in one click.</p>
-      <p><a href="{review_url}"
-            style="display:inline-block;background:#4f8cff;color:#fff;padding:12px 20px;
-            border-radius:8px;text-decoration:none;font-weight:600;">Review Campaign</a></p>
-      <p style="color:#6b7280;font-size:14px;">
-        Once approved, we'll set it up on Google Ads and Meta Ads within 24 hours.
+    body = f"""
+      <h1 style="font-family:'Sora',sans-serif;font-size:22px;margin:0 0 16px;
+                 color:#1a1a2e;font-weight:700;">Your campaign is ready</h1>
+      <p style="margin:0 0 14px;">
+        Good news &mdash; your AI-generated campaign for
+        <strong>{safe_name}</strong> is ready to review.
       </p>
-    </div>
-    """
+      <p style="margin:0 0 14px;">
+        Take a look at the Google Ads keywords, ad copy, Meta audience
+        targeting, and creative briefs. Tweak anything you&rsquo;d like, then
+        approve it in a single click.
+      </p>
+      <p style="margin:0 0 14px;color:#6b7280;font-size:14px;">
+        Once approved, we&rsquo;ll set it up on Google Ads and Meta Ads within
+        24 hours.
+      </p>"""
+    html = _layout(
+        title="Your campaign is ready",
+        preheader=f"Review and approve the {business_name} campaign whenever you're ready.",
+        body_html=body,
+        cta_label="Review campaign",
+        cta_url=review_url,
+    )
     return send_email(to, subject, html, text)
 
 
@@ -138,23 +243,30 @@ def send_campaign_to_owner(
     text = _format_owner_campaign_text(
         campaign_data, customer_email, submission, campaign_id
     )
-    # HTML version is the same text wrapped in a <pre> so email clients
-    # preserve alignment, with a minimal header above.
+    safe_name = html_mod.escape(business_name)
+    safe_email = html_mod.escape(customer_email)
     escaped = html_mod.escape(text)
-    html = f"""
-    <div style="font-family: -apple-system, sans-serif; max-width: 720px; margin: 0 auto;">
-      <h2 style="color: #1a1a2e;">New campaign approved</h2>
-      <p style="color:#444;">
-        <strong>{html_mod.escape(business_name)}</strong> just approved their
-        campaign. Details below &mdash; copy sections straight into Google Ads
-        Manager and Meta Business Suite to get them set up.
+    body = f"""
+      <h1 style="font-family:'Sora',sans-serif;font-size:22px;margin:0 0 8px;
+                 color:#1a1a2e;font-weight:700;">Action required &mdash; new campaign approved</h1>
+      <p style="margin:0 0 14px;color:#6b7280;font-size:13px;">
+        <strong>{safe_name}</strong> ({safe_email}) just approved their
+        campaign. Full breakdown below &mdash; copy sections straight into
+        Google Ads Manager and Meta Business Suite.
       </p>
       <pre style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;
-                  padding:16px;font-family: ui-monospace, Menlo, monospace;
-                  font-size:13px;line-height:1.5;white-space:pre-wrap;
-                  word-wrap:break-word;color:#1a1a2e;">{escaped}</pre>
-    </div>
-    """
+                  padding:16px;font-family:ui-monospace,Menlo,Consolas,monospace;
+                  font-size:12.5px;line-height:1.55;white-space:pre-wrap;
+                  word-wrap:break-word;color:#1a1a2e;margin:0;">{escaped}</pre>"""
+    cta_url = f"{APP_URL}/campaign/{campaign_id}" if campaign_id is not None else None
+    html = _layout(
+        title=f"Action required: {business_name}",
+        preheader=f"{business_name} just approved — copy into Google Ads + Meta Business Suite.",
+        body_html=body,
+        cta_label="Open in dashboard" if cta_url else None,
+        cta_url=cta_url,
+        accent="#d97706",  # amber — this is an action-required alert
+    )
     return send_email(OWNER_EMAIL, subject, html, text)
 
 
@@ -329,22 +441,33 @@ def _format_meta_section(m: dict, thin: str) -> list[str]:
 
 def send_campaign_approved(to: str, business_name: str) -> bool:
     subject = f"Campaign approved — {business_name} ads going live"
+    safe_name = html_mod.escape(business_name)
     text = (
         f"Your campaign for {business_name} has been approved.\n\n"
         f"We'll set up your Google Ads and Meta Ads within 24 hours and email you "
         f"when they're live.\n\n"
         f"— The Meridian Digital team"
     )
-    html = f"""
-    <div style="font-family: -apple-system, sans-serif; max-width: 560px; margin: 0 auto;">
-      <h2 style="color: #22c55e;">Campaign approved ✅</h2>
-      <p>Your campaign for <strong>{business_name}</strong> has been approved.</p>
-      <p>We'll set up your Google Ads and Meta Ads within 24 hours. You'll get one
-      more email from us as soon as your ads are live.</p>
-      <p><a href="{APP_URL}/dashboard"
-            style="display:inline-block;background:#4f8cff;color:#fff;padding:12px 20px;
-            border-radius:8px;text-decoration:none;font-weight:600;">View Dashboard</a></p>
-      <p style="color:#6b7280;font-size:14px;">— The Meridian Digital team</p>
-    </div>
-    """
+    body = f"""
+      <h1 style="font-family:'Sora',sans-serif;font-size:22px;margin:0 0 16px;
+                 color:#1a1a2e;font-weight:700;">Campaign approved</h1>
+      <p style="margin:0 0 14px;">
+        Your campaign for <strong>{safe_name}</strong> has been approved &mdash;
+        thanks for the go-ahead.
+      </p>
+      <p style="margin:0 0 14px;">
+        We&rsquo;ll set it up on Google Ads and Meta Ads within 24 hours.
+        You&rsquo;ll get one more email from us as soon as your ads are live.
+      </p>
+      <p style="margin:0;color:#6b7280;font-size:14px;">
+        Need to change something before it goes live? Just reply to this email.
+      </p>"""
+    html = _layout(
+        title="Campaign approved",
+        preheader=f"Your {business_name} campaign is approved and going live within 24 hours.",
+        body_html=body,
+        cta_label="View dashboard",
+        cta_url=f"{APP_URL}/dashboard",
+        accent="#22c55e",  # green for good news
+    )
     return send_email(to, subject, html, text)

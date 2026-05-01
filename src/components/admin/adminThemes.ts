@@ -1,7 +1,19 @@
 // Preset color themes for the admin header. Stored in localStorage,
 // applied client-side on mount. Keys are stable identifiers; never rename.
 
-export type AdminThemeId = 'amber' | 'navy' | 'sage' | 'rose' | 'slate' | 'violet';
+export type AdminThemeId =
+  | 'amber'
+  | 'navy'
+  | 'sage'
+  | 'rose'
+  | 'slate'
+  | 'violet'
+  | 'sky'
+  | 'midnight'
+  | 'coral'
+  | 'mint'
+  | 'sunset'
+  | 'forest';
 
 export type AdminTheme = {
   id: AdminThemeId;
@@ -62,6 +74,54 @@ export const ADMIN_THEMES: Record<AdminThemeId, AdminTheme> = {
     headerBorder: 'border-violet-200',
     badgeBg: 'bg-violet-200',
     badgeText: 'text-violet-900',
+  },
+  sky: {
+    id: 'sky',
+    label: 'Sky',
+    headerBg: 'bg-sky-50',
+    headerBorder: 'border-sky-200',
+    badgeBg: 'bg-sky-200',
+    badgeText: 'text-sky-900',
+  },
+  midnight: {
+    id: 'midnight',
+    label: 'Midnight',
+    headerBg: 'bg-zinc-900',
+    headerBorder: 'border-zinc-800',
+    badgeBg: 'bg-violet-500',
+    badgeText: 'text-white',
+  },
+  coral: {
+    id: 'coral',
+    label: 'Coral',
+    headerBg: 'bg-orange-50',
+    headerBorder: 'border-orange-200',
+    badgeBg: 'bg-orange-200',
+    badgeText: 'text-orange-900',
+  },
+  mint: {
+    id: 'mint',
+    label: 'Mint',
+    headerBg: 'bg-teal-50',
+    headerBorder: 'border-teal-200',
+    badgeBg: 'bg-teal-200',
+    badgeText: 'text-teal-900',
+  },
+  sunset: {
+    id: 'sunset',
+    label: 'Sunset',
+    headerBg: 'bg-fuchsia-50',
+    headerBorder: 'border-fuchsia-200',
+    badgeBg: 'bg-fuchsia-200',
+    badgeText: 'text-fuchsia-900',
+  },
+  forest: {
+    id: 'forest',
+    label: 'Forest',
+    headerBg: 'bg-green-900',
+    headerBorder: 'border-green-800',
+    badgeBg: 'bg-lime-400',
+    badgeText: 'text-green-950',
   },
 };
 

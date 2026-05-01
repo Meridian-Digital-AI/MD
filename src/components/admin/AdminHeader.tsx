@@ -45,7 +45,7 @@ export default function AdminHeader({ email }: { email: string | null }) {
   };
 
   const theme = ADMIN_THEMES[themeId];
-  const isDarkHeader = themeId === 'navy';
+  const isDarkHeader = themeId === 'navy' || themeId === 'midnight' || themeId === 'forest';
   const linkColor = isDarkHeader ? 'text-slate-300 hover:text-white' : 'text-slate-500 hover:text-slate-900';
   const titleColor = isDarkHeader ? 'text-white' : 'text-[var(--color-navy-900)]';
   const emailColor = isDarkHeader ? 'text-slate-300' : 'text-slate-500';

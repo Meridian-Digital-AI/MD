@@ -8,3 +8,6 @@ resend>=2.0.0
 google-ads>=25.0.0
 google-auth-oauthlib>=1.2.0
 facebook-business>=20.0.0
+# Production WSGI server. Flask's built-in server is fine for local dev only;
+# anything user-facing should run behind gunicorn.
+gunicorn>=21.0.0

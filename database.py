@@ -5,7 +5,13 @@ import uuid
 import json
 import os
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "ads_platform.db")
+# DB lives next to the code in dev; on Render we point DB_PATH at the
+# mounted persistent disk (e.g. /var/data/ads_platform.db) so data survives
+# redeploys. Set DB_PATH in the platform's env vars.
+DB_PATH = os.environ.get(
+    "DB_PATH",
+    os.path.join(os.path.dirname(__file__), "ads_platform.db"),
+)
 
 
 def get_db():

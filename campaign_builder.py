@@ -38,10 +38,18 @@ Always think carefully about the business's specific situation, location, and co
 
 
 def _business_context(business: BusinessInfo, google_daily: float, meta_daily: float) -> str:
+    # Service area can be blank for e-commerce / online-only businesses.
+    # When empty, signal that to Claude so it doesn't try to invent geo
+    # targeting that wouldn't make sense.
+    service_area_line = (
+        f"Service Area: {business.service_area}"
+        if business.service_area
+        else "Service Area: (online / e-commerce, no fixed geographic area)"
+    )
     return f"""Business Name: {business.business_name}
 Industry: {business.industry}
 Location: {business.location}
-Service Area: {business.service_area}
+{service_area_line}
 Monthly Ad Budget: £{business.monthly_budget_gbp:.2f}
 Primary Goal: {business.goal}
 Target Audience: {business.target_audience}
@@ -50,10 +58,9 @@ Website: {business.website_url or "Not provided"}
 Phone: {business.phone_number or "Not provided"}
 Additional Context: {business.additional_context or "None"}
 
-Budget allocation:
+Budget allocation (operator-set, not auto-split):
 - Google Ads daily budget: £{google_daily}
-- Meta Ads daily budget: £{meta_daily}
-(Budget is the total monthly spend allocated across the selected platform(s).)"""
+- Meta Ads daily budget: £{meta_daily}"""
 
 
 def _build_google_ads(client: anthropic.Anthropic, business: BusinessInfo, context: str) -> GoogleAdsCampaign:
@@ -118,14 +125,11 @@ def build_campaign(business: BusinessInfo, platforms: list[str] = None) -> Campa
 
     client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-    monthly_budget = business.monthly_budget_gbp
-    both = len(platforms) == 2
-    if both:
-        google_daily = round((monthly_budget * 0.60) / 30, 2)
-        meta_daily = round((monthly_budget * 0.40) / 30, 2)
-    else:
-        google_daily = round(monthly_budget / 30, 2)
-        meta_daily = round(monthly_budget / 30, 2)
+    # Per-platform monthly budgets are operator-driven now (no auto-split).
+    # Each platform's daily budget = (its monthly) / 30. Skipped platforms
+    # (budget = 0) just generate with 0/day, which the caller can filter on.
+    google_daily = round(business.google_monthly_budget / 30, 2) if business.google_monthly_budget else 0.0
+    meta_daily = round(business.meta_monthly_budget / 30, 2) if business.meta_monthly_budget else 0.0
     context = _business_context(business, google_daily, meta_daily)
 
     google = None

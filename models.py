@@ -9,7 +9,15 @@ class BusinessInfo(BaseModel):
     business_name: str
     industry: str
     location: str                        # e.g. "Bristol, South West England"
-    service_area: str                    # e.g. "Bristol, Bath, Somerset"
+    # Optional — e-commerce / online-only businesses leave this blank.
+    # When empty, the campaign builder treats the business as serving online
+    # rather than a fixed geographic area.
+    service_area: Optional[str] = ""     # e.g. "Bristol, Bath, Somerset" or "" for online-only
+    # Per-platform monthly budgets — operator-driven, no auto-split. Either
+    # can be 0 to skip that platform entirely. monthly_budget_gbp stays as the
+    # legacy total field for downstream code (computed = google + meta).
+    google_monthly_budget: float = 0.0
+    meta_monthly_budget: float = 0.0
     monthly_budget_gbp: float            # total monthly ad spend budget
     goal: Literal["leads", "sales", "awareness"]
     usps: list[str]                      # unique selling points, e.g. ["24/7 service", "No call-out fee"]

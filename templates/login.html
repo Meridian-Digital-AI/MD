@@ -1,12 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Sign In - Meridian Digital{% endblock %}
+{% block title %}Admin Login - Meridian Digital{% endblock %}
 
 {% block content %}
 <div class="card auth-card">
-    <h1>Welcome back</h1>
+    <h1>Admin login</h1>
     <p class="muted">
-        Enter the email you used at checkout and we&rsquo;ll take you
-        straight to your campaigns.
+        Sign in with your Meridian operator email.
     </p>
 
     {% if error %}
@@ -16,16 +15,9 @@
     <form method="POST" action="{{ url_for('login_submit') }}">
         <div class="form-group">
             <label for="email">Email address</label>
-            <input type="email" id="email" name="email" placeholder="you@company.com" required autofocus>
+            <input type="email" id="email" name="email" placeholder="wandj@meridian-digital-partners.com" required autofocus>
         </div>
         <button type="submit" class="btn btn-primary btn-full">Sign in</button>
     </form>
-
-    <p class="muted small auth-footer">
-        Don&rsquo;t have a plan yet?
-        <a href="{{ marketing_site_url }}/services" target="_blank" rel="noopener">
-            See pricing &amp; sign up
-        </a>
-    </p>
 </div>
 {% endblock %}

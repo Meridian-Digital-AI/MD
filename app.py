@@ -153,12 +153,20 @@ def generate_campaign_task(customer_id, submission_id, campaign_id):
         sub = db.get_submission(submission_id)
         usps = json.loads(sub["usps"]) if isinstance(sub["usps"], str) else sub["usps"]
 
+        google_budget = float(sub.get("google_monthly_budget") or 0)
+        meta_budget = float(sub.get("meta_monthly_budget") or 0)
+        # Legacy monthly_budget = sum of the two; falls back if rows pre-date
+        # the per-platform split.
+        legacy_total = float(sub["monthly_budget"]) if sub["monthly_budget"] else (google_budget + meta_budget)
+
         business = BusinessInfo(
             business_name=sub["business_name"],
             industry=sub["industry"],
             location=sub["location"],
-            service_area=sub["service_area"],
-            monthly_budget_gbp=float(sub["monthly_budget"]),
+            service_area=sub.get("service_area") or "",
+            google_monthly_budget=google_budget,
+            meta_monthly_budget=meta_budget,
+            monthly_budget_gbp=legacy_total,
             goal=sub["goal"],
             usps=usps,
             target_audience=sub["target_audience"],

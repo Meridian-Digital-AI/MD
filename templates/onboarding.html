@@ -51,9 +51,9 @@
                 <input type="text" id="location" name="location" required placeholder="e.g. Plymouth, South West England" value="{{ prefill.location or '' }}">
             </div>
             <div class="form-group">
-                <label for="service_area">Service area</label>
-                <input type="text" id="service_area" name="service_area" required placeholder="e.g. Plymouth, Exeter, Torquay, South Devon" value="{{ prefill.service_area or '' }}">
-                <p class="hint">List the towns/regions you serve, separated by commas</p>
+                <label for="service_area">Service area <span class="muted small">(optional)</span></label>
+                <input type="text" id="service_area" name="service_area" placeholder="e.g. Plymouth, Exeter, Torquay — or leave blank for online-only" value="{{ prefill.service_area or '' }}">
+                <p class="hint">Leave blank if the business is e-commerce / online-only with no physical service area</p>
             </div>
 
             <div class="step-nav">
@@ -102,10 +102,17 @@
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="monthly_budget">Monthly ad budget (GBP)</label>
-                    <input type="number" id="monthly_budget" name="monthly_budget" required min="100" step="50" placeholder="e.g. 500" value="{{ prefill.monthly_budget or '' }}">
-                    <p class="hint">This is your ad spend, separate from the subscription fee</p>
+                    <label for="google_monthly_budget">Google Ads budget (£/mo)</label>
+                    <input type="number" id="google_monthly_budget" name="google_monthly_budget" required min="0" step="10" placeholder="e.g. 200" value="{{ prefill.google_monthly_budget or '' }}">
+                    <p class="hint">Set to 0 if not running Google this month</p>
                 </div>
+                <div class="form-group">
+                    <label for="meta_monthly_budget">Meta Ads budget (£/mo)</label>
+                    <input type="number" id="meta_monthly_budget" name="meta_monthly_budget" required min="0" step="10" placeholder="e.g. 200" value="{{ prefill.meta_monthly_budget or '' }}">
+                    <p class="hint">Set to 0 if not running Meta this month</p>
+                </div>
+            </div>
+            <div class="form-row">
                 <div class="form-group">
                     <label for="goal">Primary goal</label>
                     <select id="goal" name="goal" required>
@@ -114,8 +121,24 @@
                         <option value="sales" {{ 'selected' if prefill.goal == 'sales' }}>Drive sales</option>
                         <option value="awareness" {{ 'selected' if prefill.goal == 'awareness' }}>Build brand awareness</option>
                     </select>
+                    <p class="hint">Ad spend is separate from the subscription fee. Total: £<span id="budget_total">0</span>/mo</p>
                 </div>
             </div>
+            <script>
+                // Live total of the two budget inputs.
+                (function () {
+                    var g = document.getElementById('google_monthly_budget');
+                    var m = document.getElementById('meta_monthly_budget');
+                    var out = document.getElementById('budget_total');
+                    function update() {
+                        var total = (parseFloat(g.value) || 0) + (parseFloat(m.value) || 0);
+                        out.textContent = total.toFixed(0);
+                    }
+                    g.addEventListener('input', update);
+                    m.addEventListener('input', update);
+                    update();
+                })();
+            </script>
 
             <div class="step-nav">
                 <button type="button" class="btn btn-secondary" onclick="prevStep(4)">Back</button>

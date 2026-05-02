@@ -71,6 +71,16 @@ def init_db():
         conn.execute("ALTER TABLE submissions ADD COLUMN platforms TEXT DEFAULT 'google_ads,meta_ads'")
         conn.commit()
 
+    # Migration: split single monthly_budget into per-platform Google + Meta
+    # budgets. Existing rows get 0 for both — operator can re-enter when
+    # generating a fresh campaign for those clients.
+    if "google_monthly_budget" not in sub_cols:
+        conn.execute("ALTER TABLE submissions ADD COLUMN google_monthly_budget REAL DEFAULT 0")
+        conn.commit()
+    if "meta_monthly_budget" not in sub_cols:
+        conn.execute("ALTER TABLE submissions ADD COLUMN meta_monthly_budget REAL DEFAULT 0")
+        conn.commit()
+
     # Migration: add push columns if they don't exist
     existing = {row[1] for row in conn.execute("PRAGMA table_info(campaigns)").fetchall()}
     new_cols = {
@@ -151,20 +161,29 @@ def get_customer_by_token(token):
 
 
 def save_submission(customer_id, data):
+    # Per-platform budgets are the source of truth now; legacy monthly_budget
+    # column gets the sum so anything still reading it sees a sensible value.
+    google_budget = float(data.get("google_monthly_budget", 0) or 0)
+    meta_budget = float(data.get("meta_monthly_budget", 0) or 0)
+    total_budget = google_budget + meta_budget
+
     conn = get_db()
     conn.execute(
         """INSERT INTO submissions
         (customer_id, business_name, industry, location, service_area,
-         monthly_budget, goal, usps, target_audience, website_url,
+         monthly_budget, google_monthly_budget, meta_monthly_budget,
+         goal, usps, target_audience, website_url,
          phone_number, additional_context, platforms)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
         (
             customer_id,
             data["business_name"],
             data["industry"],
             data["location"],
-            data["service_area"],
-            float(data["monthly_budget"]),
+            data.get("service_area", ""),
+            total_budget,
+            google_budget,
+            meta_budget,
             data["goal"],
             json.dumps(data.get("usps", [])),
             data["target_audience"],

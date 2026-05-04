@@ -2,6 +2,7 @@ import { getCurrentClient } from '@/lib/dashboard/getCurrentClient';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sectionsForTier, SECTION_LABELS } from '@/lib/dashboard/packageFeatures';
 import { StatCard } from '@/components/dashboard/StatCard';
+import ClientDeliverablesPanel from '@/components/dashboard/ClientDeliverablesPanel';
 
 export default async function OverviewPage() {
   const ctx = await getCurrentClient({ requireSection: 'overview' });
@@ -34,6 +35,8 @@ export default async function OverviewPage() {
         <StatCard label="Active campaigns" value="—" hint="Connect ads to populate" />
         <StatCard label="Domain" value={ctx.client.domain ?? 'Not set'} small />
       </div>
+
+      <ClientDeliverablesPanel clientId={ctx.client.id} />
 
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <h3 className="text-sm font-semibold text-slate-900">Available in your package</h3>

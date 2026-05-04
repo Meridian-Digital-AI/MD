@@ -22,7 +22,49 @@ export default function MetaConnectionCard({
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualToken, setManualToken] = useState('');
+  const [manualExpiry, setManualExpiry] = useState<'never' | '60'>('never');
+  const [manualBusy, setManualBusy] = useState(false);
+  const [manualError, setManualError] = useState<string | null>(null);
+  const [manualSuccess, setManualSuccess] = useState<string | null>(null);
   const isConnected = !!connectedAs;
+
+  async function onSubmitManual(e: React.FormEvent) {
+    e.preventDefault();
+    setManualError(null);
+    setManualSuccess(null);
+    if (!manualToken.trim()) {
+      setManualError('Paste the access token from Business Manager.');
+      return;
+    }
+    setManualBusy(true);
+    try {
+      const res = await fetch('/api/admin/meta/manual-token', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          token: manualToken.trim(),
+          expiresInDays: manualExpiry === '60' ? 60 : null,
+        }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setManualError(json.message || json.error || 'Token rejected.');
+        setManualBusy(false);
+        return;
+      }
+      setManualSuccess(
+        `Connected as ${json.connectedAs}. Visible ad accounts: ${json.adAccountCount}.`,
+      );
+      setManualToken('');
+      setManualBusy(false);
+      startTransition(() => router.refresh());
+    } catch (err) {
+      setManualError((err as Error).message || 'Network error.');
+      setManualBusy(false);
+    }
+  }
 
   async function onDisconnect() {
     if (!confirm('Disconnect Meta? Client dashboards will stop showing live ad data.')) return;
@@ -132,6 +174,99 @@ export default function MetaConnectionCard({
               {busy ? 'Disconnecting…' : 'Disconnect'}
             </button>
           </>
+        )}
+      </div>
+
+      <div className="mt-6 border-t border-slate-200 pt-5">
+        <button
+          type="button"
+          onClick={() => setManualOpen((v) => !v)}
+          className="flex items-center gap-2 text-xs font-medium text-slate-600 hover:text-slate-900"
+        >
+          <span>{manualOpen ? '▾' : '▸'}</span>
+          Paste a System User token instead (advanced)
+        </button>
+
+        {manualOpen && (
+          <div className="mt-4 space-y-3">
+            <p className="text-sm text-slate-600">
+              If the OAuth flow is blocked (e.g. &quot;Feature unavailable&quot;), you can paste a
+              long-lived <strong>System User token</strong> generated from a Meta Business Manager.
+              Get one at <span className="font-mono text-xs">business.facebook.com</span> →
+              Settings → Users → System Users → Generate New Token.
+            </p>
+
+            <form onSubmit={onSubmitManual} className="space-y-3">
+              <div>
+                <label
+                  htmlFor="meta-manual-token"
+                  className="block text-xs font-medium text-slate-700"
+                >
+                  Access token
+                </label>
+                <textarea
+                  id="meta-manual-token"
+                  value={manualToken}
+                  onChange={(e) => setManualToken(e.target.value)}
+                  placeholder="EAAB… (paste full token)"
+                  rows={3}
+                  className="mt-1 w-full rounded-lg border border-slate-300 bg-white px-3 py-2 font-mono text-xs text-slate-900 focus:border-slate-400 focus:outline-none"
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+              </div>
+
+              <div>
+                <span className="block text-xs font-medium text-slate-700">Token expiry</span>
+                <div className="mt-1 flex gap-4 text-sm text-slate-700">
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="meta-manual-expiry"
+                      value="never"
+                      checked={manualExpiry === 'never'}
+                      onChange={() => setManualExpiry('never')}
+                    />
+                    Never expires (default for System User)
+                  </label>
+                  <label className="inline-flex items-center gap-2">
+                    <input
+                      type="radio"
+                      name="meta-manual-expiry"
+                      value="60"
+                      checked={manualExpiry === '60'}
+                      onChange={() => setManualExpiry('60')}
+                    />
+                    60 days
+                  </label>
+                </div>
+              </div>
+
+              {manualError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                  {manualError}
+                </div>
+              )}
+              {manualSuccess && (
+                <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
+                  {manualSuccess}
+                </div>
+              )}
+
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  disabled={manualBusy || !manualToken.trim()}
+                  className="rounded-lg bg-[var(--color-navy-900)] px-4 py-2 text-sm font-semibold text-white hover:opacity-90 disabled:opacity-50"
+                >
+                  {manualBusy ? 'Validating…' : 'Save token'}
+                </button>
+                <span className="text-xs text-slate-500">
+                  Token is validated by Meta before saving.
+                </span>
+              </div>
+            </form>
+          </div>
         )}
       </div>
     </div>

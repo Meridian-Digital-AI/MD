@@ -61,12 +61,20 @@ export default async function AdminClientPage({
             </span>
             <span className="text-xs text-slate-400">{client.domain ?? 'No domain'}</span>
           </div>
-          <Link
-            href={`/admin/clients/${client.slug}/edit`}
-            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-          >
-            Edit
-          </Link>
+          <div className="flex items-center gap-2">
+            <Link
+              href={`/admin/clients/${client.slug}/monthly`}
+              className="rounded-lg bg-[var(--color-navy-900)] px-3 py-1.5 text-sm font-semibold text-white hover:opacity-90"
+            >
+              Monthly view
+            </Link>
+            <Link
+              href={`/admin/clients/${client.slug}/edit`}
+              className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-slate-300 hover:bg-slate-50"
+            >
+              Edit
+            </Link>
+          </div>
         </div>
       </div>
 

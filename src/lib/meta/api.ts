@@ -53,15 +53,25 @@ export async function fetchMetaAdAccounts(accessToken: string): Promise<MetaAdAc
 export async function fetchMetaInsights(
   accessToken: string,
   adAccountId: string,
-  datePreset: 'last_30d' | 'last_7d' | 'today' = 'last_30d',
+  range:
+    | 'last_30d'
+    | 'last_7d'
+    | 'today'
+    | { since: string; until: string } = 'last_30d',
 ): Promise<MetaInsights | null> {
   // adAccountId may or may not include the "act_" prefix; normalise.
   const id = adAccountId.startsWith('act_') ? adAccountId : `act_${adAccountId}`;
-  const json = await metaGet<{ data: Array<Record<string, string>> }>(`/${id}/insights`, accessToken, {
+  const params: Record<string, string> = {
     fields: 'spend,impressions,clicks,actions,date_start,date_stop',
-    date_preset: datePreset,
     level: 'account',
-  });
+  };
+  if (typeof range === 'string') {
+    params.date_preset = range;
+  } else {
+    // Custom calendar range — used by the monthly view.
+    params.time_range = JSON.stringify({ since: range.since, until: range.until });
+  }
+  const json = await metaGet<{ data: Array<Record<string, string>> }>(`/${id}/insights`, accessToken, params);
   const row = json.data?.[0];
   if (!row) return null;
   // `actions` is an array of {action_type, value}. Sum the conversion-like ones.

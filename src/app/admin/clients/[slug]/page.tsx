@@ -87,7 +87,26 @@ export default async function AdminClientPage({
 
       <div className="rounded-xl border border-slate-200 bg-white p-6">
         <div className="flex items-baseline justify-between gap-4">
-          <h3 className="text-sm font-semibold text-slate-900">Health score breakdown</h3>
+          <div className="flex items-baseline gap-3">
+            <h3 className="text-sm font-semibold text-slate-900">Health score breakdown</h3>
+            <span
+              className={`rounded-full px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide ${
+                health.trend === 'up'
+                  ? 'bg-emerald-100 text-emerald-800'
+                  : health.trend === 'down'
+                  ? 'bg-red-100 text-red-800'
+                  : health.trend === 'flat'
+                  ? 'bg-slate-100 text-slate-700'
+                  : 'bg-slate-100 text-slate-500'
+              }`}
+              title={health.trendDetail}
+            >
+              {health.trend === 'up' && '↑ Up'}
+              {health.trend === 'down' && '↓ Down'}
+              {health.trend === 'flat' && '→ Flat'}
+              {health.trend === 'neutral' && '· Neutral'}
+            </span>
+          </div>
           <span className="text-xs text-slate-400">
             Updated {new Date(health.computedAt).toLocaleString('en-GB')}
           </span>

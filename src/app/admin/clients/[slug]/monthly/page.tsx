@@ -152,6 +152,12 @@ export default async function MonthlyClientPage({
             </span>
             <span className="text-sm text-slate-500">— {range.label}</span>
           </div>
+          <a
+            href={`/api/admin/clients/${client.slug}/monthly/pdf?month=${month}`}
+            className="rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
+          >
+            Download PDF
+          </a>
         </div>
       </div>
 

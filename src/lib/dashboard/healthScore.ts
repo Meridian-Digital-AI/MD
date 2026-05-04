@@ -15,11 +15,15 @@ export type HealthBreakdownComponent = {
   detail: string;
 };
 
+export type HealthTrend = 'up' | 'flat' | 'down' | 'neutral';
+
 export type HealthBreakdown = {
   score: number;            // 1-10
   components: HealthBreakdownComponent[];
   isNewClient: boolean;     // <14 days old → defaulted to 5
   computedAt: string;       // ISO timestamp
+  trend: HealthTrend;       // derived from lead-trend component (or 'neutral' for new clients)
+  trendDetail: string;      // human-readable, e.g. "Up 40% vs prior 30 days"
 };
 
 export type HealthSignals = {
@@ -105,6 +109,8 @@ export function computeHealthScore(signals: HealthSignals, now: Date = new Date(
       score: NEW_CLIENT_DEFAULT_SCORE,
       isNewClient: true,
       computedAt: now.toISOString(),
+      trend: 'neutral',
+      trendDetail: 'Too new to compute trend',
       components: [
         {
           key: 'new_client',
@@ -126,10 +132,25 @@ export function computeHealthScore(signals: HealthSignals, now: Date = new Date(
   const total = volume.points + trend.points + traffic.points + recency.points + integrations.points;
   const score = Math.max(1, Math.min(10, total));
 
+  // Derive trend label from the lead-trend component scoring.
+  // 2 → up, 1 → flat, 0 → down. If both periods had zero leads, treat as neutral.
+  let trendLabel: HealthTrend;
+  if (signals.leadsLast30d === 0 && signals.leadsPrior30d === 0) {
+    trendLabel = 'neutral';
+  } else if (trend.points >= 2) {
+    trendLabel = 'up';
+  } else if (trend.points === 1) {
+    trendLabel = 'flat';
+  } else {
+    trendLabel = 'down';
+  }
+
   return {
     score,
     isNewClient: false,
     computedAt: now.toISOString(),
+    trend: trendLabel,
+    trendDetail: trend.detail,
     components: [
       { key: 'lead_volume', label: 'Lead volume (30d)', points: volume.points, max: 3, detail: volume.detail },
       { key: 'lead_trend', label: 'Lead trend (vs prior 30d)', points: trend.points, max: 2, detail: trend.detail },

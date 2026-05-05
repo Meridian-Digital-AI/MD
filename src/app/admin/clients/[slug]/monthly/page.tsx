@@ -17,6 +17,7 @@ import { fetchMetaInsights } from '@/lib/meta/api';
 import { StatCard } from '@/components/dashboard/StatCard';
 import MonthSelector from './MonthSelector';
 import DeliverablesPanel from './DeliverablesPanel';
+import ManualMetaEntryCard from './ManualMetaEntryCard';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -75,7 +76,7 @@ export default async function MonthlyClientPage({
 
   // Run metrics + deliverables fetch in parallel.
   const admin = createSupabaseAdminClient();
-  const [leadsRes, pvRes, deliverablesRes, metaConn] = await Promise.all([
+  const [leadsRes, pvRes, deliverablesRes, metaConn, manualMetaRes] = await Promise.all([
     supabase
       .from('leads')
       .select('id', { count: 'exact', head: true })
@@ -96,6 +97,12 @@ export default async function MonthlyClientPage({
       .order('order_index', { ascending: true })
       .order('created_at', { ascending: true }),
     getAgencyMetaConnection(),
+    admin
+      .from('client_meta_monthly')
+      .select('spend, impressions, clicks, notes, updated_at, updated_by')
+      .eq('client_id', client.id)
+      .eq('year_month', month)
+      .maybeSingle(),
   ]);
 
   const leadCount = leadsRes.count ?? 0;
@@ -109,13 +116,31 @@ export default async function MonthlyClientPage({
     completed_at: (d.completed_at as string | null) ?? null,
   }));
 
-  // Meta insights for this calendar month — only if both connection and
-  // ad account exist. Failures are non-fatal.
+  // Meta numbers — manual-entry table is source of truth.
+  // Only fall back to live API if no manual row exists AND Meta is connected.
+  // (In practice the live API path is gated by Tech Provider verification, so
+  // for now manual entry is effectively the only source.)
+  const manualMeta = manualMetaRes.data as {
+    spend: number | null;
+    impressions: number | null;
+    clicks: number | null;
+    notes: string | null;
+    updated_at: string;
+    updated_by: string | null;
+  } | null;
+
   let metaSpend: number | null = null;
   let metaImpressions: number | null = null;
   let metaClicks: number | null = null;
   let metaError: string | null = null;
-  if (metaConn && client.meta_ad_account_id) {
+  let metaSource: 'manual' | 'api' | null = null;
+
+  if (manualMeta && (manualMeta.spend != null || manualMeta.impressions != null || manualMeta.clicks != null)) {
+    metaSpend = manualMeta.spend;
+    metaImpressions = manualMeta.impressions;
+    metaClicks = manualMeta.clicks;
+    metaSource = 'manual';
+  } else if (metaConn && client.meta_ad_account_id) {
     try {
       const ins = await fetchMetaInsights(metaConn.access_token, client.meta_ad_account_id, {
         since: range.sinceDay,
@@ -125,12 +150,21 @@ export default async function MonthlyClientPage({
         metaSpend = ins.spend;
         metaImpressions = ins.impressions;
         metaClicks = ins.clicks;
+        metaSource = 'api';
       } else {
         metaSpend = 0;
+        metaSource = 'api';
       }
     } catch (err) {
       metaError = (err as Error).message || 'Meta API error';
     }
+  }
+
+  // Resolve updater email for the entry-card initial value.
+  let updatedByEmail: string | null = null;
+  if (manualMeta?.updated_by) {
+    const { data: u } = await admin.from('users').select('email').eq('id', manualMeta.updated_by).maybeSingle();
+    updatedByEmail = (u?.email as string | undefined) ?? null;
   }
 
   const cpl =
@@ -176,11 +210,11 @@ export default async function MonthlyClientPage({
           hint={
             metaError
               ? metaError
-              : !client.meta_ad_account_id
-              ? 'No ad account linked'
-              : !metaConn
-              ? 'Meta not connected'
-              : undefined
+              : metaSource === 'manual'
+              ? 'Manually entered'
+              : metaSource === 'api'
+              ? 'From Meta API'
+              : 'Type numbers in below'
           }
         />
         <StatCard
@@ -215,6 +249,23 @@ export default async function MonthlyClientPage({
           </div>
         </div>
       )}
+
+      <ManualMetaEntryCard
+        slug={client.slug}
+        month={month}
+        initial={
+          manualMeta
+            ? {
+                spend: manualMeta.spend,
+                impressions: manualMeta.impressions,
+                clicks: manualMeta.clicks,
+                notes: manualMeta.notes,
+                updated_at: manualMeta.updated_at,
+                updated_by_email: updatedByEmail,
+              }
+            : null
+        }
+      />
 
       <DeliverablesPanel
         slug={client.slug}

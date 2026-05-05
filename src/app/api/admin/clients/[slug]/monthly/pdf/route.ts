@@ -81,7 +81,7 @@ export async function GET(
 
   const tier = client.package_tier as PackageTier;
   const admin = createSupabaseAdminClient();
-  const [leadsRes, pvRes, deliverablesRes, metaConn] = await Promise.all([
+  const [leadsRes, pvRes, deliverablesRes, metaConn, manualMetaRes] = await Promise.all([
     supabase
       .from('leads')
       .select('id', { count: 'exact', head: true })
@@ -102,12 +102,29 @@ export async function GET(
       .order('order_index', { ascending: true })
       .order('created_at', { ascending: true }),
     getAgencyMetaConnection(),
+    admin
+      .from('client_meta_monthly')
+      .select('spend, impressions, clicks')
+      .eq('client_id', client.id)
+      .eq('year_month', month)
+      .maybeSingle(),
   ]);
+
+  // Manual-entry table wins over the live API (which is currently blocked anyway).
+  const manualMeta = manualMetaRes.data as {
+    spend: number | null;
+    impressions: number | null;
+    clicks: number | null;
+  } | null;
 
   let adSpend: number | null = null;
   let metaImpressions: number | null = null;
   let metaClicks: number | null = null;
-  if (metaConn && client.meta_ad_account_id) {
+  if (manualMeta && (manualMeta.spend != null || manualMeta.impressions != null || manualMeta.clicks != null)) {
+    adSpend = manualMeta.spend;
+    metaImpressions = manualMeta.impressions;
+    metaClicks = manualMeta.clicks;
+  } else if (metaConn && client.meta_ad_account_id) {
     try {
       const ins = await fetchMetaInsights(metaConn.access_token, client.meta_ad_account_id, {
         since: range.sinceDay,

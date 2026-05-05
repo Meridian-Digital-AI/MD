@@ -3,20 +3,40 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { sectionsForTier, SECTION_LABELS } from '@/lib/dashboard/packageFeatures';
 import { StatCard } from '@/components/dashboard/StatCard';
 import ClientDeliverablesPanel from '@/components/dashboard/ClientDeliverablesPanel';
+import ClientOnboardingChecklist from '@/components/dashboard/ClientOnboardingChecklist';
+
+function currentYearMonth(): string {
+  const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}`;
+}
 
 export default async function OverviewPage() {
   const ctx = await getCurrentClient({ requireSection: 'overview' });
   const supabase = await createSupabaseServerClient();
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-  const [leads30, pageviews30] = await Promise.all([
+  const month = currentYearMonth();
+  const [leads30, pageviews30, metaThisMonth] = await Promise.all([
     supabase.from('leads').select('id', { count: 'exact', head: true })
       .eq('client_id', ctx.client.id).gte('created_at', since),
     supabase.from('pageviews').select('id', { count: 'exact', head: true })
       .eq('client_id', ctx.client.id).gte('ts', since),
+    supabase
+      .from('client_meta_monthly')
+      .select('spend, impressions, clicks')
+      .eq('client_id', ctx.client.id)
+      .eq('year_month', month)
+      .maybeSingle(),
   ]);
 
+  const meta = metaThisMonth.data as { spend: number | null; impressions: number | null; clicks: number | null } | null;
   const visibleSections = sectionsForTier(ctx.client.package_tier);
+
+  // Show onboarding checklist only until the client has at least one
+  // pageview AND one lead (or 7 days have passed — TODO add later).
+  const hasAnyPageviews = (pageviews30.count ?? 0) > 0;
+  const hasAnyLeads = (leads30.count ?? 0) > 0;
+  const showOnboarding = !hasAnyPageviews || !hasAnyLeads;
 
   return (
     <div className="space-y-8">
@@ -32,9 +52,26 @@ export default async function OverviewPage() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard label="New leads (30d)" value={leads30.count ?? 0} />
         <StatCard label="Website views (30d)" value={pageviews30.count ?? 0} />
-        <StatCard label="Active campaigns" value="—" hint="Connect ads to populate" />
+        <StatCard
+          label="Ad spend (this month)"
+          value={
+            meta?.spend == null
+              ? '—'
+              : `£${meta.spend.toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
+          }
+          hint={meta?.spend == null ? 'Updated by your team monthly' : undefined}
+        />
         <StatCard label="Domain" value={ctx.client.domain ?? 'Not set'} small />
       </div>
+
+      {showOnboarding && (
+        <ClientOnboardingChecklist
+          clientSlug={ctx.client.slug}
+          businessName={ctx.client.business_name}
+          hasPageviews={hasAnyPageviews}
+          hasLeads={hasAnyLeads}
+        />
+      )}
 
       <ClientDeliverablesPanel clientId={ctx.client.id} />
 

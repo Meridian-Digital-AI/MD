@@ -3,6 +3,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { TIER_LABELS, type PackageTier } from '@/lib/dashboard/packageFeatures';
 import { computeClientHealth } from '@/lib/dashboard/computeClientHealth';
 import type { HealthBreakdown, HealthTrend } from '@/lib/dashboard/healthScore';
+import IntegrationRequestsPanel, { type IntegrationRequestRow } from '@/components/admin/IntegrationRequestsPanel';
 
 const AT_RISK_THRESHOLD = 4;
 
@@ -13,6 +14,49 @@ export default async function AdminHome() {
     .from('clients')
     .select('id, business_name, slug, package_tier, domain, created_at')
     .order('business_name');
+
+  // Open + in-progress integration requests for the inbox panel.
+  // Joined with clients + users via two extra lookups (kept simple — at this
+  // scale it's a handful of rows, no need for a SQL view).
+  const { data: openReqs } = await supabase
+    .from('integration_requests')
+    .select('id, kind, status, platform, access_method, web_person_email, web_person_name, message, created_at, client_id, requested_by')
+    .in('status', ['open', 'in_progress'])
+    .order('created_at', { ascending: false });
+
+  const integrationRows: IntegrationRequestRow[] = [];
+  if (openReqs && openReqs.length > 0) {
+    const clientIds = Array.from(new Set(openReqs.map((r) => r.client_id as string)));
+    const userIds = Array.from(
+      new Set(openReqs.map((r) => r.requested_by as string | null).filter((x): x is string => !!x)),
+    );
+    const [{ data: cRows }, { data: uRows }] = await Promise.all([
+      supabase.from('clients').select('id, slug, business_name').in('id', clientIds),
+      userIds.length
+        ? supabase.from('users').select('id, email').in('id', userIds)
+        : Promise.resolve({ data: [] as { id: string; email: string }[] }),
+    ]);
+    const cMap = new Map((cRows ?? []).map((c) => [c.id as string, c]));
+    const uMap = new Map((uRows ?? []).map((u) => [u.id as string, u.email as string]));
+    for (const r of openReqs) {
+      const c = cMap.get(r.client_id as string);
+      if (!c) continue;
+      integrationRows.push({
+        id: r.id as string,
+        kind: r.kind as IntegrationRequestRow['kind'],
+        status: r.status as IntegrationRequestRow['status'],
+        platform: (r.platform as string | null) ?? null,
+        access_method: (r.access_method as string | null) ?? null,
+        web_person_email: (r.web_person_email as string | null) ?? null,
+        web_person_name: (r.web_person_name as string | null) ?? null,
+        message: (r.message as string | null) ?? null,
+        created_at: r.created_at as string,
+        client_slug: c.slug as string,
+        client_business_name: c.business_name as string,
+        requester_email: r.requested_by ? (uMap.get(r.requested_by as string) ?? null) : null,
+      });
+    }
+  }
 
   // Pull lead/pageview counts + health scores in parallel
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
@@ -73,6 +117,8 @@ export default async function AdminHome() {
           </Link>
         </div>
       </div>
+
+      <IntegrationRequestsPanel rows={integrationRows} />
 
       {atRisk.length > 0 && (
         <div className="rounded-xl border border-red-200 bg-red-50 p-5">

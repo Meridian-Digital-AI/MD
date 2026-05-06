@@ -12,10 +12,14 @@ import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/sup
 type Tier = 'get-started' | 'grow' | 'full-partner' | 'website-only';
 const TIERS: Tier[] = ['get-started', 'grow', 'full-partner', 'website-only'];
 
+type WebsiteStatus = 'live' | 'in_progress' | 'none';
+const WEBSITE_STATUSES: WebsiteStatus[] = ['live', 'in_progress', 'none'];
+
 interface Body {
   business_name?: string;
   package_tier?: string;
   domain?: string | null;
+  website_status?: string;
 }
 
 export async function PATCH(
@@ -67,6 +71,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'domain_invalid' }, { status: 400 });
     }
     updates.domain = v;
+  }
+
+  if (body.website_status !== undefined) {
+    const v = body.website_status.trim();
+    if (!WEBSITE_STATUSES.includes(v as WebsiteStatus)) {
+      return NextResponse.json({ error: 'website_status_invalid' }, { status: 400 });
+    }
+    updates.website_status = v;
   }
 
   if (Object.keys(updates).length === 0) {

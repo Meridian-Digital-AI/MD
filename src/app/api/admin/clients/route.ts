@@ -7,6 +7,10 @@
 
 import { NextResponse } from 'next/server';
 import { createSupabaseServerClient, createSupabaseAdminClient } from '@/lib/supabase/server';
+import { sendEmail, escapeHtml } from '@/lib/email/resend';
+
+const PUBLIC_BASE =
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://meridian-digital-partners.com';
 
 type Tier = 'get-started' | 'grow' | 'full-partner' | 'website-only';
 const TIERS: Tier[] = ['get-started', 'grow', 'full-partner', 'website-only'];
@@ -92,7 +96,10 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'insert_failed', message: insertErr?.message }, { status: 500 });
   }
 
-  // Optional: add primary_email to approved_emails so the client can sign in.
+  // Optional: add primary_email to approved_emails so the client can sign in,
+  // then send them an invite email with a one-click magic link.
+  let inviteSent = false;
+  let inviteWarning: string | null = null;
   if (primary_email) {
     const { error: emailErr } = await admin
       .from('approved_emails')
@@ -114,7 +121,70 @@ export async function POST(request: Request) {
         { status: 201 },
       );
     }
+
+    // Auto-invite — Supabase generates a magic link, we send it via our own
+    // branded Resend email so the client sees Meridian Digital, not Supabase.
+    // Best-effort: any failure here is logged but doesn't block client creation.
+    try {
+      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+        type: 'invite',
+        email: primary_email,
+        options: { redirectTo: `${PUBLIC_BASE}/dashboard` },
+      });
+      if (linkErr) {
+        console.error('[admin/clients] generateLink failed', linkErr);
+        inviteWarning = `invite_link_failed: ${linkErr.message}`;
+      } else {
+        const actionLink = linkData?.properties?.action_link;
+        if (!actionLink) {
+          inviteWarning = 'invite_link_failed: missing action_link';
+        } else {
+          const result = await sendEmail({
+            to: primary_email,
+            subject: `Welcome to Meridian Digital — your ${business_name} dashboard is ready`,
+            html: `
+              <h2 style="font-family:Helvetica,Arial,sans-serif;color:#0f172a">Welcome to Meridian Digital</h2>
+              <p>We&rsquo;ve set up a dashboard for <strong>${escapeHtml(business_name)}</strong> where you can:</p>
+              <ul>
+                <li>See live website visitors and where they came from</li>
+                <li>Track every lead the moment they arrive</li>
+                <li>Watch your monthly Meta Ads performance</li>
+                <li>Keep tabs on what we&rsquo;re delivering each month</li>
+              </ul>
+              <p>Click the button below to sign in. No password — the link logs you in automatically and works on any device.</p>
+              <p style="margin:24px 0">
+                <a href="${actionLink}" style="display:inline-block;background:#0f172a;color:#ffffff;padding:12px 22px;border-radius:8px;font-weight:600;text-decoration:none">
+                  Open my dashboard
+                </a>
+              </p>
+              <p style="color:#64748b;font-size:13px">If the button doesn&rsquo;t work, copy and paste this link:<br>
+                <a href="${actionLink}">${actionLink}</a>
+              </p>
+              <hr style="border:none;border-top:1px solid #e2e8f0;margin:24px 0">
+              <p style="color:#64748b;font-size:12px">
+                Once you&rsquo;re in, you&rsquo;ll see a short setup checklist with three options for getting tracking installed —
+                most clients pick &ldquo;have us do it&rdquo;. We&rsquo;ll be in touch within 1 working day either way.
+              </p>
+              <p style="color:#64748b;font-size:12px">Any questions, just reply to this email.</p>
+            `,
+          });
+          if (result.skipped) {
+            inviteWarning = 'invite_email_skipped_no_resend_key';
+          } else if (!result.ok) {
+            inviteWarning = `invite_email_failed: ${result.error ?? 'unknown'}`;
+          } else {
+            inviteSent = true;
+          }
+        }
+      }
+    } catch (err) {
+      console.error('[admin/clients] invite flow threw', err);
+      inviteWarning = `invite_threw: ${(err as Error).message}`;
+    }
   }
 
-  return NextResponse.json({ ok: true, slug: created.slug }, { status: 201 });
+  return NextResponse.json(
+    { ok: true, slug: created.slug, inviteSent, ...(inviteWarning ? { warning: inviteWarning } : {}) },
+    { status: 201 },
+  );
 }

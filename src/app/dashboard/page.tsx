@@ -16,7 +16,7 @@ export default async function OverviewPage() {
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
   const month = currentYearMonth();
-  const [leads30, pageviews30, metaThisMonth] = await Promise.all([
+  const [leads30, pageviews30, metaThisMonth, openRequest] = await Promise.all([
     supabase.from('leads').select('id', { count: 'exact', head: true })
       .eq('client_id', ctx.client.id).gte('created_at', since),
     supabase.from('pageviews').select('id', { count: 'exact', head: true })
@@ -26,6 +26,17 @@ export default async function OverviewPage() {
       .select('spend, impressions, clicks')
       .eq('client_id', ctx.client.id)
       .eq('year_month', month)
+      .maybeSingle(),
+    // Latest still-pending onboarding request for this client. Used to keep
+    // the checklist showing the "✓ Got it" confirmation state across page
+    // refreshes — without this it resets to the picker on every reload.
+    supabase
+      .from('integration_requests')
+      .select('kind, status')
+      .eq('client_id', ctx.client.id)
+      .in('status', ['open', 'in_progress'])
+      .order('created_at', { ascending: false })
+      .limit(1)
       .maybeSingle(),
   ]);
 
@@ -73,6 +84,13 @@ export default async function OverviewPage() {
           hasPageviews={hasAnyPageviews}
           hasLeads={hasAnyLeads}
           websiteStatus={ctx.client.website_status}
+          pendingRequestKind={
+            (openRequest.data?.kind as
+              | 'white_glove'
+              | 'send_to_web_person'
+              | 'build_site'
+              | undefined) ?? null
+          }
         />
       )}
 

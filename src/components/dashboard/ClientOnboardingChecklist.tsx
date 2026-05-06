@@ -18,9 +18,30 @@ interface Props {
   hasPageviews: boolean;
   hasLeads: boolean;
   websiteStatus: 'live' | 'in_progress' | 'none';
+  // The kind of the latest still-pending integration request for this client,
+  // if any. Used to keep the "✓ Got it" confirmation state visible across
+  // page refreshes — submitted-state was previously local-only so it
+  // disappeared on reload.
+  pendingRequestKind:
+    | 'white_glove'
+    | 'send_to_web_person'
+    | 'build_site'
+    | null;
 }
 
 type Path = null | 'white_glove' | 'send_web_person' | 'diy' | 'build_site';
+type Submitted = 'white_glove' | 'send_web_person' | 'build_site' | null;
+
+// Map DB-side kind values onto the local Submitted type. The component uses
+// `send_web_person` (no `to_`) internally, while the DB / API uses
+// `send_to_web_person` — keep that translation in one place.
+function pendingToSubmitted(
+  k: 'white_glove' | 'send_to_web_person' | 'build_site' | null,
+): Submitted {
+  if (k === 'send_to_web_person') return 'send_web_person';
+  if (k === 'white_glove' || k === 'build_site') return k;
+  return null;
+}
 
 export default function ClientOnboardingChecklist({
   clientSlug,
@@ -28,10 +49,13 @@ export default function ClientOnboardingChecklist({
   hasPageviews,
   hasLeads,
   websiteStatus,
+  pendingRequestKind,
 }: Props) {
   const router = useRouter();
   const [path, setPath] = useState<Path>(null);
-  const [submitted, setSubmitted] = useState<'white_glove' | 'send_web_person' | 'build_site' | null>(null);
+  const [submitted, setSubmitted] = useState<Submitted>(
+    pendingToSubmitted(pendingRequestKind),
+  );
 
   // Live verification: while either step is unticked, re-fetch every 30s.
   // Stops once both are done (parent unmounts us anyway).

@@ -69,6 +69,17 @@
   .dark h1, .dark h2, .dark h3, .dark h4, .dark h5, .dark h6 {
     color: #ffffff;
   }
+
+  /* Form fields — make typed text dark by default so it's readable on
+     light input backgrounds. Without this, inputs inherit the body's
+     gray-700 which is too washed-out on white. */
+  input, textarea, select {
+    color: var(--gray-900);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: var(--gray-400);
+  }
 }
 
 @layer components {

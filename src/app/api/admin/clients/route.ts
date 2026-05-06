@@ -122,23 +122,28 @@ export async function POST(request: Request) {
       );
     }
 
-    // Auto-invite — Supabase generates a magic link, we send it via our own
-    // branded Resend email so the client sees Meridian Digital, not Supabase.
+    // Auto-invite — Supabase generates an invite link, but instead of using
+    // its raw action_link (which routes through Supabase's verify endpoint
+    // and doesn't play nicely with our SSR session cookies), we pull out the
+    // hashed_token and build our own URL pointing at /auth/confirm. That
+    // route uses our SSR client + verifyOtp, which sets cookies cleanly on
+    // our domain — same flow that works for the standard /login PKCE path.
+    //
     // Best-effort: any failure here is logged but doesn't block client creation.
     try {
       const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
         type: 'invite',
         email: primary_email,
-        options: { redirectTo: `${PUBLIC_BASE}/dashboard` },
       });
       if (linkErr) {
         console.error('[admin/clients] generateLink failed', linkErr);
         inviteWarning = `invite_link_failed: ${linkErr.message}`;
       } else {
-        const actionLink = linkData?.properties?.action_link;
-        if (!actionLink) {
-          inviteWarning = 'invite_link_failed: missing action_link';
+        const hashedToken = linkData?.properties?.hashed_token;
+        if (!hashedToken) {
+          inviteWarning = 'invite_link_failed: missing hashed_token';
         } else {
+          const actionLink = `${PUBLIC_BASE}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=invite&next=${encodeURIComponent('/dashboard')}`;
           const result = await sendEmail({
             to: primary_email,
             subject: `Welcome to Meridian Digital — your ${business_name} dashboard is ready`,

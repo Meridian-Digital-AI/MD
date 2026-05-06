@@ -129,21 +129,56 @@ export async function POST(request: Request) {
     // route uses our SSR client + verifyOtp, which sets cookies cleanly on
     // our domain — same flow that works for the standard /login PKCE path.
     //
+    // We try `invite` first (which both creates the auth user AND generates
+    // a one-time link). If the user already exists in auth.users (e.g. they
+    // were previously invited and the row got cleaned up from public.clients
+    // but not from auth.users), invite-type rejects them — fall back to
+    // `magiclink`, which works for existing users.
+    //
     // Best-effort: any failure here is logged but doesn't block client creation.
     try {
-      const { data: linkData, error: linkErr } = await admin.auth.admin.generateLink({
+      let hashedToken: string | undefined;
+      let linkType: 'invite' | 'magiclink' = 'invite';
+
+      const inviteResult = await admin.auth.admin.generateLink({
         type: 'invite',
         email: primary_email,
       });
-      if (linkErr) {
-        console.error('[admin/clients] generateLink failed', linkErr);
-        inviteWarning = `invite_link_failed: ${linkErr.message}`;
-      } else {
-        const hashedToken = linkData?.properties?.hashed_token;
-        if (!hashedToken) {
-          inviteWarning = 'invite_link_failed: missing hashed_token';
+
+      if (inviteResult.error) {
+        const msg = (inviteResult.error.message || '').toLowerCase();
+        const userExists =
+          msg.includes('already') ||
+          msg.includes('registered') ||
+          msg.includes('exists');
+        if (!userExists) {
+          console.error('[admin/clients] generateLink invite failed', inviteResult.error);
+          inviteWarning = `invite_link_failed: ${inviteResult.error.message}`;
         } else {
-          const actionLink = `${PUBLIC_BASE}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=invite&next=${encodeURIComponent('/dashboard')}`;
+          // Existing auth user — fall back to a magic-link.
+          linkType = 'magiclink';
+          const magicResult = await admin.auth.admin.generateLink({
+            type: 'magiclink',
+            email: primary_email,
+          });
+          if (magicResult.error) {
+            console.error('[admin/clients] generateLink magiclink failed', magicResult.error);
+            inviteWarning = `magiclink_failed: ${magicResult.error.message}`;
+          } else {
+            hashedToken = magicResult.data?.properties?.hashed_token;
+          }
+        }
+      } else {
+        hashedToken = inviteResult.data?.properties?.hashed_token;
+      }
+
+      if (!hashedToken && !inviteWarning) {
+        inviteWarning = 'invite_link_failed: missing hashed_token';
+      }
+
+      if (hashedToken) {
+        const actionLink = `${PUBLIC_BASE}/auth/confirm?token_hash=${encodeURIComponent(hashedToken)}&type=${linkType}&next=${encodeURIComponent('/dashboard')}`;
+        {
           const result = await sendEmail({
             to: primary_email,
             subject: `Welcome to Meridian Digital — your ${business_name} dashboard is ready`,

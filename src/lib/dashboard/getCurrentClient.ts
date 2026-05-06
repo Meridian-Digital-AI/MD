@@ -14,6 +14,7 @@ export interface DashboardContext {
     slug: string;
     package_tier: PackageTier;
     domain: string | null;
+    website_status: 'live' | 'in_progress' | 'none';
   };
 }
 
@@ -33,7 +34,7 @@ export async function getCurrentClient(opts?: { requireSection?: DashboardSectio
 
   const { data: client } = await supabase
     .from('clients')
-    .select('id, business_name, slug, package_tier, domain')
+    .select('id, business_name, slug, package_tier, domain, website_status')
     .eq('id', profile.client_id)
     .single();
   if (!client) redirect('/dashboard');
@@ -43,9 +44,13 @@ export async function getCurrentClient(opts?: { requireSection?: DashboardSectio
     notFound();
   }
 
+  // website_status defaults to 'live' in the DB; treat anything unrecognised as 'live'
+  // so existing clients (and pre-migration rows) behave normally.
+  const ws = (client.website_status ?? 'live') as 'live' | 'in_progress' | 'none';
+
   return {
     user: { id: user.id, email: profile.email },
     role: profile.role as 'admin' | 'client',
-    client: { ...client, package_tier: tier },
+    client: { ...client, package_tier: tier, website_status: ws },
   };
 }

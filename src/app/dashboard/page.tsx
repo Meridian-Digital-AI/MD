@@ -32,11 +32,13 @@ export default async function OverviewPage() {
   const meta = metaThisMonth.data as { spend: number | null; impressions: number | null; clicks: number | null } | null;
   const visibleSections = sectionsForTier(ctx.client.package_tier);
 
-  // Show onboarding checklist only until the client has at least one
-  // pageview AND one lead (or 7 days have passed — TODO add later).
+  // Show onboarding checklist until: tracking is flowing AND a lead has come
+  // through AND the website is live. Brand-new clients without a site (or
+  // with a site we're still building) see it from day one.
   const hasAnyPageviews = (pageviews30.count ?? 0) > 0;
   const hasAnyLeads = (leads30.count ?? 0) > 0;
-  const showOnboarding = !hasAnyPageviews || !hasAnyLeads;
+  const websiteLive = ctx.client.website_status === 'live';
+  const showOnboarding = !hasAnyPageviews || !hasAnyLeads || !websiteLive;
 
   return (
     <div className="space-y-8">
@@ -70,6 +72,7 @@ export default async function OverviewPage() {
           businessName={ctx.client.business_name}
           hasPageviews={hasAnyPageviews}
           hasLeads={hasAnyLeads}
+          websiteStatus={ctx.client.website_status}
         />
       )}
 

@@ -17,19 +17,21 @@ interface Props {
   businessName: string;
   hasPageviews: boolean;
   hasLeads: boolean;
+  websiteStatus: 'live' | 'in_progress' | 'none';
 }
 
-type Path = null | 'white_glove' | 'send_web_person' | 'diy';
+type Path = null | 'white_glove' | 'send_web_person' | 'diy' | 'build_site';
 
 export default function ClientOnboardingChecklist({
   clientSlug,
   businessName,
   hasPageviews,
   hasLeads,
+  websiteStatus,
 }: Props) {
   const router = useRouter();
   const [path, setPath] = useState<Path>(null);
-  const [submitted, setSubmitted] = useState<'white_glove' | 'send_web_person' | null>(null);
+  const [submitted, setSubmitted] = useState<'white_glove' | 'send_web_person' | 'build_site' | null>(null);
 
   // Live verification: while either step is unticked, re-fetch every 30s.
   // Stops once both are done (parent unmounts us anyway).
@@ -72,20 +74,32 @@ export default function ClientOnboardingChecklist({
         />
         <ChecklistRow
           done={hasPageviews}
-          title="Connect your website"
+          title={websiteStatus === 'none' ? 'Get your website live' : 'Connect your website'}
           subtitle={
             hasPageviews
               ? 'Tracking active — pageviews are flowing'
+              : websiteStatus === 'in_progress'
+              ? "We're building your site — tracking will be installed automatically"
+              : websiteStatus === 'none'
+              ? "No website yet? We'll build one for you with tracking already baked in."
               : 'So we can show you visitors and behaviour'
           }
         >
-          {!hasPageviews && (
+          {!hasPageviews && websiteStatus === 'in_progress' && (
+            <div className="mt-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-xs text-blue-900">
+              ⏳ Site in production. Your Meridian Digital account manager is on it —
+              you&rsquo;ll hear from them within 1 working day to scope and start the build.
+              Tracking + lead capture will be installed automatically as part of delivery.
+            </div>
+          )}
+          {!hasPageviews && websiteStatus !== 'in_progress' && (
             <PathPicker
               path={path}
               setPath={setPath}
               clientSlug={clientSlug}
               submitted={submitted}
               setSubmitted={setSubmitted}
+              websiteStatus={websiteStatus}
             />
           )}
         </ChecklistRow>
@@ -156,12 +170,14 @@ function PathPicker({
   clientSlug,
   submitted,
   setSubmitted,
+  websiteStatus,
 }: {
   path: Path;
   setPath: (p: Path) => void;
   clientSlug: string;
-  submitted: 'white_glove' | 'send_web_person' | null;
-  setSubmitted: (s: 'white_glove' | 'send_web_person' | null) => void;
+  submitted: 'white_glove' | 'send_web_person' | 'build_site' | null;
+  setSubmitted: (s: 'white_glove' | 'send_web_person' | 'build_site' | null) => void;
+  websiteStatus: 'live' | 'in_progress' | 'none';
 }) {
   if (submitted === 'white_glove') {
     return (
@@ -179,9 +195,33 @@ function PathPicker({
       </div>
     );
   }
+  if (submitted === 'build_site') {
+    return (
+      <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-xs text-emerald-900">
+        ✓ Got it. We&rsquo;ll be in touch within 1 working day to scope your site and kick off
+        the build. Tracking + lead capture will be baked in from day one — nothing for you to install later.
+      </div>
+    );
+  }
+
+  // When the client has no website yet, lead with the "build me one" path.
+  // The other paths still show below, smaller, in case they actually do have
+  // a site we don't know about yet.
+  const showBuildSiteFirst = websiteStatus === 'none';
 
   return (
     <div className="mt-3 space-y-2">
+      {showBuildSiteFirst && (
+        <PathButton
+          icon="🛠"
+          title="I don't have a website yet — build me one"
+          subtitle="We'll build a fast marketing site with tracking + lead capture baked in"
+          active={path === 'build_site'}
+          onClick={() => setPath('build_site')}
+          fullWidth
+        />
+      )}
+
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
         <PathButton
           icon="🤝"
@@ -198,13 +238,24 @@ function PathPicker({
           onClick={() => setPath('send_web_person')}
         />
         <PathButton
-          icon="🛠️"
+          icon="🧰"
           title="Show me how"
           subtitle="DIY guides per platform"
           active={path === 'diy'}
           onClick={() => setPath('diy')}
         />
       </div>
+
+      {!showBuildSiteFirst && (
+        <button
+          type="button"
+          onClick={() => setPath('build_site')}
+          className="w-full rounded-md border border-dashed border-slate-300 bg-white px-3 py-2 text-xs text-slate-600 hover:border-slate-400 hover:bg-slate-50"
+        >
+          Don&rsquo;t have a website yet?{' '}
+          <span className="font-semibold text-[var(--color-navy-900)]">We&rsquo;ll build you one →</span>
+        </button>
+      )}
 
       {path === 'white_glove' && (
         <WhiteGloveForm
@@ -216,6 +267,12 @@ function PathPicker({
         <SendToWebPersonForm
           clientSlug={clientSlug}
           onSubmitted={() => setSubmitted('send_web_person')}
+        />
+      )}
+      {path === 'build_site' && (
+        <BuildSiteForm
+          clientSlug={clientSlug}
+          onSubmitted={() => setSubmitted('build_site')}
         />
       )}
       {path === 'diy' && (
@@ -244,26 +301,30 @@ function PathButton({
   subtitle,
   active,
   onClick,
+  fullWidth = false,
 }: {
   icon: string;
   title: string;
   subtitle: string;
   active: boolean;
   onClick: () => void;
+  fullWidth?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`flex flex-col items-start rounded-lg border p-3 text-left transition ${
+      className={`${fullWidth ? 'w-full flex-row items-center gap-3' : 'flex-col items-start'} flex rounded-lg border p-3 text-left transition ${
         active
           ? 'border-[var(--color-navy-900)] bg-white shadow-sm'
           : 'border-slate-200 bg-white hover:border-slate-300'
       }`}
     >
       <span className="text-lg">{icon}</span>
-      <span className="mt-1 text-xs font-semibold text-slate-900">{title}</span>
-      <span className="text-[11px] text-slate-500">{subtitle}</span>
+      <span className={fullWidth ? 'flex flex-col' : 'contents'}>
+        <span className={`${fullWidth ? '' : 'mt-1'} text-xs font-semibold text-slate-900`}>{title}</span>
+        <span className="text-[11px] text-slate-500">{subtitle}</span>
+      </span>
     </button>
   );
 }
@@ -452,6 +513,90 @@ function SendToWebPersonForm({
         className="rounded-md bg-[var(--color-navy-900)] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-60"
       >
         {submitting ? 'Sending…' : 'Send instructions'}
+      </button>
+    </form>
+  );
+}
+
+function BuildSiteForm({
+  clientSlug,
+  onSubmitted,
+}: {
+  clientSlug: string;
+  onSubmitted: () => void;
+}) {
+  const [platform, setPlatform] = useState('');
+  const [message, setMessage] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/dashboard/integration-request`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          slug: clientSlug,
+          kind: 'build_site',
+          platform: platform || null,
+          message,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setErr(json.message || 'Could not send. Please try again.');
+        setSubmitting(false);
+        return;
+      }
+      onSubmitted();
+    } catch {
+      setErr('Network error.');
+      setSubmitting(false);
+    }
+  }
+
+  return (
+    <form onSubmit={submit} className="mt-2 rounded-lg border border-slate-200 bg-white p-3 space-y-3 text-xs">
+      <div className="rounded-md bg-slate-50 p-2.5 text-[11px] text-slate-600">
+        We&rsquo;ll build you a fast marketing site (typically 1&ndash;5 working days). Hosting is on us — you only pay for your domain
+        (~£10/yr from Namecheap or GoDaddy). Tracking + lead capture are baked in from day one.
+      </div>
+      <label className="block">
+        <span className="font-medium text-slate-700">Any preference on platform / style? (optional)</span>
+        <select
+          value={platform}
+          onChange={(e) => setPlatform(e.target.value)}
+          className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs"
+        >
+          <option value="">No preference — you decide</option>
+          <option value="other">Custom marketing site (we host, fastest)</option>
+          <option value="wix">Wix (so I can edit it later)</option>
+          <option value="squarespace">Squarespace (so I can edit it later)</option>
+          <option value="webflow">Webflow (so I can edit it later)</option>
+          <option value="wordpress">WordPress (so I can edit it later)</option>
+          <option value="shopify">Shopify (I&rsquo;ll be selling online)</option>
+        </select>
+      </label>
+      <label className="block">
+        <span className="font-medium text-slate-700">Tell us what you want (optional)</span>
+        <textarea
+          rows={3}
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          placeholder="e.g. plumber in Edinburgh, want a simple 1-pager with quote-request form. I have a logo and 5 photos."
+          className="mt-1 w-full rounded-md border border-slate-300 px-2 py-1.5 text-xs"
+        />
+      </label>
+      {err && <div className="text-red-600">{err}</div>}
+      <button
+        type="submit"
+        disabled={submitting}
+        className="rounded-md bg-[var(--color-navy-900)] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-60"
+      >
+        {submitting ? 'Sending…' : 'Kick off site build'}
       </button>
     </form>
   );

@@ -45,7 +45,10 @@ export async function POST(request: Request) {
 
   const slug = typeof body.slug === 'string' ? body.slug : null;
   const kind = typeof body.kind === 'string' ? body.kind : null;
-  if (!slug || (kind !== 'white_glove' && kind !== 'send_to_web_person')) {
+  if (
+    !slug ||
+    (kind !== 'white_glove' && kind !== 'send_to_web_person' && kind !== 'build_site')
+  ) {
     return NextResponse.json({ error: 'invalid_payload' }, { status: 400 });
   }
 
@@ -114,6 +117,62 @@ export async function POST(request: Request) {
         <p style="color:#64748b;font-size:12px">
           Tracking script: <code>&lt;script src="${PUBLIC_BASE}/track.js" data-key="${escapeHtml(client.api_key as string)}"&gt;&lt;/script&gt;</code><br>
           Lead webhook: <code>${PUBLIC_BASE}/api/leads/${escapeHtml(client.slug as string)}</code>
+        </p>
+      `,
+      replyTo: profile.email as string,
+    });
+
+    return NextResponse.json({ ok: true });
+  }
+
+  if (kind === 'build_site') {
+    // Optional preferences: which platform style they want, what they need
+    // (basic 1-pager / multi-page / e-comm), and the message.
+    const platform =
+      typeof body.platform === 'string' && VALID_PLATFORMS.includes(body.platform)
+        ? body.platform
+        : null;
+
+    const { error } = await admin.from('integration_requests').insert({
+      client_id: client.id,
+      requested_by: profile.id,
+      kind,
+      platform,
+      message,
+    });
+    if (error) {
+      console.error('[integration-request/insert build_site]', error);
+      return NextResponse.json({ error: 'save_failed', message: error.message }, { status: 500 });
+    }
+
+    // Flip the client's website_status so the dashboard shows the
+    // "site in production" banner instead of the install-tracking nag.
+    const { error: updErr } = await admin
+      .from('clients')
+      .update({ website_status: 'in_progress' })
+      .eq('id', client.id);
+    if (updErr) {
+      // Non-fatal — request is logged; admin can flip the flag manually.
+      console.error('[integration-request/build_site update website_status]', updErr);
+    }
+
+    await sendEmail({
+      to: ADMIN_NOTIFY,
+      subject: `[Onboarding] ${client.business_name} needs a website built`,
+      html: `
+        <h2>New site build request</h2>
+        <p><strong>Client:</strong> ${escapeHtml(client.business_name as string)}
+          (<a href="${PUBLIC_BASE}/admin/clients/${escapeHtml(client.slug as string)}">${escapeHtml(client.slug as string)}</a>)</p>
+        <p><strong>Domain (existing or planned):</strong> ${escapeHtml((client.domain as string | null) ?? 'not set')}</p>
+        <p><strong>Preferred platform / style:</strong> ${escapeHtml(platform ?? 'not specified')}</p>
+        <p><strong>Requested by:</strong> ${escapeHtml(profile.email as string)}</p>
+        ${message ? `<p><strong>Their notes:</strong><br>${escapeHtml(message).replace(/\n/g, '<br>')}</p>` : ''}
+        <hr>
+        <p style="color:#64748b;font-size:12px">
+          The client's <code>website_status</code> has been set to <strong>in_progress</strong> —
+          their dashboard will now show "site in production" instead of nagging them to install tracking.
+          When the build is done and tracking is in place, flip it back to <strong>live</strong>
+          from the admin client page.
         </p>
       `,
       replyTo: profile.email as string,

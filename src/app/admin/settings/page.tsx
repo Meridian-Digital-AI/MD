@@ -1,5 +1,11 @@
 import Link from 'next/link';
 import { isMetaConfigured } from '@/lib/meta/config';
+
+// Force dynamic rendering — Vercel doesn't expose env vars marked
+// "Sensitive" during static generation, only at runtime. Without this,
+// isGoogleConfigured() can return false even when the vars are set.
+export const dynamic = 'force-dynamic';
+
 import { getAgencyMetaConnection } from '@/lib/meta/connection';
 import { isGoogleConfigured } from '@/lib/google/config';
 import { getAgencyGoogleConnection } from '@/lib/google/connection';

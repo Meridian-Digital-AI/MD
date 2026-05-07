@@ -10,6 +10,7 @@ import MetaAdAccountPicker from './MetaAdAccountPicker';
 import MetaInsightsPanel from './MetaInsightsPanel';
 import PlatformIdsCard from './PlatformIdsCard';
 import WebsiteStatusCard from './WebsiteStatusCard';
+import { SubscriptionPanel } from './SubscriptionPanel';
 
 export default async function AdminClientPage({
   params,
@@ -21,7 +22,7 @@ export default async function AdminClientPage({
 
   const { data: client } = await supabase
     .from('clients')
-    .select('id, business_name, slug, package_tier, domain, health_score, health_score_notes, created_at, api_key, meta_ad_account_id, google_ads_customer_id, ga4_property_id, website_status')
+    .select('id, business_name, slug, package_tier, domain, health_score, health_score_notes, created_at, api_key, meta_ad_account_id, google_ads_customer_id, ga4_property_id, website_status, subscription_status, stripe_customer_id, stripe_subscription_id')
     .eq('slug', slug)
     .single();
   if (!client) notFound();
@@ -163,6 +164,13 @@ export default async function AdminClientPage({
       />
 
       {client.api_key && <ClientApiKeyCard slug={client.slug} apiKey={client.api_key} />}
+
+      <SubscriptionPanel
+        clientId={client.id}
+        subscriptionStatus={client.subscription_status ?? 'unpaid'}
+        stripeCustomerId={client.stripe_customer_id}
+        stripeSubscriptionId={client.stripe_subscription_id}
+      />
     </div>
   );
 }

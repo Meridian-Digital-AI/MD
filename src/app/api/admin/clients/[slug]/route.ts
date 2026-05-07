@@ -20,6 +20,19 @@ interface Body {
   package_tier?: string;
   domain?: string | null;
   website_status?: string;
+  google_ads_customer_id?: string | null;
+  ga4_property_id?: string | null;
+}
+
+// Loose format validation. Joe's note from 28 Apr:
+//   google_ads → 10-digit customer ID, no dashes (e.g. "7687321878")
+//   ga4        → 9-digit property ID            (e.g. "498712345")
+// We accept dashes too because the Google Ads UI shows them as XXX-XXX-XXXX.
+const GOOGLE_ADS_RE = /^[0-9]{10}$/;
+const GA4_PROPERTY_RE = /^[0-9]{8,12}$/;
+
+function normaliseDigits(v: string): string {
+  return v.replace(/[\s-]/g, '');
 }
 
 export async function PATCH(
@@ -79,6 +92,44 @@ export async function PATCH(
       return NextResponse.json({ error: 'website_status_invalid' }, { status: 400 });
     }
     updates.website_status = v;
+  }
+
+  if (body.google_ads_customer_id !== undefined) {
+    const raw = body.google_ads_customer_id?.trim() || null;
+    if (raw === null || raw === '') {
+      updates.google_ads_customer_id = null;
+    } else {
+      const v = normaliseDigits(raw);
+      if (!GOOGLE_ADS_RE.test(v)) {
+        return NextResponse.json(
+          {
+            error: 'google_ads_customer_id_invalid',
+            message: 'Google Ads customer ID must be 10 digits (dashes allowed).',
+          },
+          { status: 400 },
+        );
+      }
+      updates.google_ads_customer_id = v;
+    }
+  }
+
+  if (body.ga4_property_id !== undefined) {
+    const raw = body.ga4_property_id?.trim() || null;
+    if (raw === null || raw === '') {
+      updates.ga4_property_id = null;
+    } else {
+      const v = normaliseDigits(raw);
+      if (!GA4_PROPERTY_RE.test(v)) {
+        return NextResponse.json(
+          {
+            error: 'ga4_property_id_invalid',
+            message: 'GA4 property ID must be 8–12 digits.',
+          },
+          { status: 400 },
+        );
+      }
+      updates.ga4_property_id = v;
+    }
   }
 
   if (Object.keys(updates).length === 0) {

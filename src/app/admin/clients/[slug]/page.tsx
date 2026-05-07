@@ -8,6 +8,7 @@ import ClientApiKeyCard from './ClientApiKeyCard';
 import RecentLeadsList from './RecentLeadsList';
 import MetaAdAccountPicker from './MetaAdAccountPicker';
 import MetaInsightsPanel from './MetaInsightsPanel';
+import PlatformIdsCard from './PlatformIdsCard';
 import WebsiteStatusCard from './WebsiteStatusCard';
 
 export default async function AdminClientPage({
@@ -20,7 +21,7 @@ export default async function AdminClientPage({
 
   const { data: client } = await supabase
     .from('clients')
-    .select('id, business_name, slug, package_tier, domain, health_score, health_score_notes, created_at, api_key, meta_ad_account_id, website_status')
+    .select('id, business_name, slug, package_tier, domain, health_score, health_score_notes, created_at, api_key, meta_ad_account_id, google_ads_customer_id, ga4_property_id, website_status')
     .eq('slug', slug)
     .single();
   if (!client) notFound();
@@ -149,6 +150,12 @@ export default async function AdminClientPage({
         <MetaAdAccountPicker slug={client.slug} initialId={client.meta_ad_account_id ?? null} />
         <MetaInsightsPanel metaAdAccountId={client.meta_ad_account_id ?? null} />
       </div>
+
+      <PlatformIdsCard
+        slug={client.slug}
+        initialGoogleAds={client.google_ads_customer_id ?? null}
+        initialGa4={client.ga4_property_id ?? null}
+      />
 
       <WebsiteStatusCard
         slug={client.slug}

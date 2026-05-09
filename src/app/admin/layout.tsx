@@ -33,6 +33,12 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           >
             Access
           </Link>
+          <Link
+            href="/admin/booking-availability"
+            className="text-slate-600 hover:text-[var(--color-navy-900)]"
+          >
+            Bookings
+          </Link>
         </div>
       </nav>
 

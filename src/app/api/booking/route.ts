@@ -3,6 +3,7 @@ import { postToSheet } from '@/lib/sheets-webhook';
 import { sendEmail, escapeHtml } from '@/lib/email/resend';
 import { draftLeadReply } from '@/lib/email/lead-drafter';
 import { siteConfig } from '@/lib/data/config';
+import { createSupabaseAdminClient } from '@/lib/supabase/server';
 
 /* ── Rate limiting (matches /api/contact) ─────────────────── */
 
@@ -104,6 +105,46 @@ export async function POST(request: NextRequest) {
   };
 
   console.log('[booking]', record);
+
+  // Check the slot is still available, then insert atomically.
+  // We rely on the unique constraint on bookings.slot_iso to make the
+  // race-condition window vanishingly small (two concurrent inserts =
+  // one wins, one returns 23505).
+  const admin = createSupabaseAdminClient();
+  const { data: blocked } = await admin
+    .from('blocked_slots')
+    .select('slot_iso, reason')
+    .eq('slot_iso', slotISO)
+    .maybeSingle();
+  if (blocked) {
+    return NextResponse.json(
+      { success: false, error: 'That slot is unavailable. Please pick another time.' },
+      { status: 409 },
+    );
+  }
+
+  const insertRes = await admin.from('bookings').insert({
+    slot_iso: slotISO,
+    name: record.name,
+    email: record.email,
+    phone: record.phone || null,
+    business_name: record.businessName || null,
+    ip,
+  });
+  if (insertRes.error) {
+    if (insertRes.error.code === '23505') {
+      // Unique violation — someone else booked that slot first.
+      return NextResponse.json(
+        { success: false, error: 'That slot was just taken. Please pick another time.' },
+        { status: 409 },
+      );
+    }
+    console.error('[booking] insert failed', insertRes.error);
+    return NextResponse.json(
+      { success: false, error: 'Could not save your booking. Please try again.' },
+      { status: 500 },
+    );
+  }
 
   await postToSheet(record);
 

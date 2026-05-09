@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle } from 'lucide-react';
 
 /* ── helpers ──────────────────────────────────────────────────────── */
@@ -67,12 +67,30 @@ export default function BookingCalendar() {
     phone: '',
     businessName: '',
   });
+  const [bookedSet, setBookedSet] = useState<Set<string>>(new Set());
+  const [blockedSet, setBlockedSet] = useState<Set<string>>(new Set());
 
   // Mon-Fri for the current week view
   const weekDays = useMemo(
     () => Array.from({ length: 5 }, (_, i) => addDays(weekStart, i)),
     [weekStart],
   );
+
+  // Fetch availability for the visible week whenever weekStart changes.
+  useEffect(() => {
+    let cancelled = false;
+    const from = new Date(weekStart);
+    const to = addDays(weekStart, 7);
+    fetch(`/api/booking/availability?from=${from.toISOString()}&to=${to.toISOString()}`)
+      .then((r) => r.json())
+      .then((j: { booked?: string[]; blocked?: { slot_iso: string }[] }) => {
+        if (cancelled) return;
+        setBookedSet(new Set((j.booked || []).map((s) => new Date(s).toISOString())));
+        setBlockedSet(new Set((j.blocked || []).map((b) => new Date(b.slot_iso).toISOString())));
+      })
+      .catch(() => { /* ignore — calendar still works, just no greying */ });
+    return () => { cancelled = true; };
+  }, [weekStart]);
 
   // 9:00 AM - 4:30 PM in 30-min increments (last slot starts at 4:30, ends at 5:00)
   const slots: Slot[] = useMemo(() => {
@@ -90,6 +108,19 @@ export default function BookingCalendar() {
     return slotDate <= now;
   }
 
+  function slotIso(day: Date, slot: Slot): string {
+    const d = new Date(day);
+    d.setHours(slot.hour, slot.minute, 0, 0);
+    return d.toISOString();
+  }
+
+  function isBooked(day: Date, slot: Slot): boolean {
+    return bookedSet.has(slotIso(day, slot));
+  }
+  function isBlocked(day: Date, slot: Slot): boolean {
+    return blockedSet.has(slotIso(day, slot));
+  }
+
   function isSelected(day: Date, slot: Slot): boolean {
     if (!selected) return false;
     return (
@@ -100,7 +131,7 @@ export default function BookingCalendar() {
   }
 
   function handleSelect(day: Date, slot: Slot) {
-    if (isPast(day, slot)) return;
+    if (isPast(day, slot) || isBooked(day, slot) || isBlocked(day, slot)) return;
     setConfirmed(false);
     setErrorMsg(null);
     setSelected({ date: day, slot });
@@ -216,22 +247,32 @@ export default function BookingCalendar() {
                 </td>
                 {weekDays.map((day) => {
                   const past = isPast(day, slot);
+                  const booked = !past && isBooked(day, slot);
+                  const blocked = !past && !booked && isBlocked(day, slot);
+                  const unavail = past || booked || blocked;
                   const sel = isSelected(day, slot);
+                  let label: string;
+                  if (sel) label = 'Selected';
+                  else if (past) label = '-';
+                  else if (booked) label = 'Booked';
+                  else if (blocked) label = '—';
+                  else label = formatTime(slot.hour, slot.minute);
+
                   return (
                     <td key={day.toISOString()} className="px-1 py-1">
                       <button
                         onClick={() => handleSelect(day, slot)}
-                        disabled={past}
+                        disabled={unavail}
                         className={`w-full rounded-lg border px-2 py-1.5 text-small transition ${
                           sel
                             ? 'border-blue-600 bg-blue-600 font-medium text-white'
-                            : past
+                            : unavail
                               ? 'cursor-not-allowed border-gray-100 bg-gray-100 text-gray-300'
                               : 'border-gray-200 bg-gray-50 text-gray-700 hover:border-blue-400 hover:bg-blue-50'
                         }`}
-                        aria-label={`${formatTime(slot.hour, slot.minute)} on ${formatDate(day)}`}
+                        aria-label={`${formatTime(slot.hour, slot.minute)} on ${formatDate(day)}${booked ? ' — already booked' : blocked ? ' — unavailable' : ''}`}
                       >
-                        {sel ? 'Selected' : past ? '-' : formatTime(slot.hour, slot.minute)}
+                        {label}
                       </button>
                     </td>
                   );

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import {
   createContact,
   getDemoLink,
@@ -9,6 +9,11 @@ import { siteConfig } from '@/lib/data/config';
 import { postToSheet } from '@/lib/sheets-webhook';
 import { sendEmail, escapeHtml } from '@/lib/email/resend';
 import { draftLeadReply } from '@/lib/email/lead-drafter';
+
+// Allow up to 60s for the fire-and-forget AI drafter (deferred via after()).
+// Vercel default is 10s on Hobby; the drafter scrapes a website + calls Claude,
+// which can take 15-20s end-to-end.
+export const maxDuration = 60;
 
 /* ── Constants ───────────────────────────────────────────────── */
 
@@ -290,16 +295,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     sendAutoresponder(result.data.email, result.data.name, result.data.businessType).catch(() => {});
     sendOwnerNotification(result.data).catch(() => {});
 
-    // AI-drafted reply suggestion lands in wandj@'s inbox ~30s later for review.
-    draftLeadReply({
-      name: result.data.name,
-      email: result.data.email,
-      phone: result.data.phone,
-      businessName: result.data.businessName,
-      businessType: result.data.businessType,
-      message: result.data.message,
-      sourcePage: result.data.sourcePage,
-    }).catch(() => {});
+    // AI-drafted reply suggestion. Deferred via `after()` so Vercel keeps the
+    // function alive past the response — without this the runtime tears the
+    // function down before Claude finishes thinking.
+    after(async () => {
+      try {
+        await draftLeadReply({
+          name: result.data.name,
+          email: result.data.email,
+          phone: result.data.phone,
+          businessName: result.data.businessName,
+          businessType: result.data.businessType,
+          message: result.data.message,
+          sourcePage: result.data.sourcePage,
+        });
+      } catch (err) {
+        console.error('[contact] drafter failed', err);
+      }
+    });
 
     // Mirror to the Google Sheet / trigger 48h digest pipeline.
     await postToSheet({

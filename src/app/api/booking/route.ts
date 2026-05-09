@@ -1,9 +1,11 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { postToSheet } from '@/lib/sheets-webhook';
 import { sendEmail, escapeHtml } from '@/lib/email/resend';
 import { draftLeadReply } from '@/lib/email/lead-drafter';
 import { siteConfig } from '@/lib/data/config';
 import { createSupabaseAdminClient } from '@/lib/supabase/server';
+
+export const maxDuration = 60; // see /api/contact for rationale
 
 /* ── Rate limiting (matches /api/contact) ─────────────────── */
 
@@ -148,16 +150,25 @@ export async function POST(request: NextRequest) {
 
   await postToSheet(record);
 
-  // Fire-and-forget the three follow-up emails.
+  // Fast emails fire-and-forget — they finish in 1-2s and squeak through
+  // before the function tears down.
   sendCustomerConfirmation(record).catch(() => {});
   sendOwnerBookingNotification(record).catch(() => {});
-  draftLeadReply({
-    name: record.name,
-    email: record.email,
-    phone: record.phone,
-    businessName: record.businessName,
-    message: `Booked a discovery call: ${record.slotDisplay}`,
-  }).catch(() => {});
+
+  // Slow AI drafter deferred via after() so Vercel waits for it.
+  after(async () => {
+    try {
+      await draftLeadReply({
+        name: record.name,
+        email: record.email,
+        phone: record.phone,
+        businessName: record.businessName,
+        message: `Booked a discovery call: ${record.slotDisplay}`,
+      });
+    } catch (err) {
+      console.error('[booking] drafter failed', err);
+    }
+  });
 
   return NextResponse.json({
     success: true,

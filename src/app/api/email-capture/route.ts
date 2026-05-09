@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse, after } from 'next/server';
 import { postToSheet } from '@/lib/sheets-webhook';
 import { sendEmail, escapeHtml } from '@/lib/email/resend';
 import { draftLeadReply } from '@/lib/email/lead-drafter';
 import { siteConfig } from '@/lib/data/config';
+
+export const maxDuration = 60; // see /api/contact for rationale
 
 /* ── Rate limiting (matches /api/contact: 10 / 15min per IP) ─── */
 
@@ -119,11 +121,16 @@ export async function POST(request: NextRequest) {
   sendDiscountEmail(email).catch(() => {});
   sendOwnerNotification(email, source, ip).catch(() => {});
 
-  // AI-drafted reply suggestion to wandj@. Less context than the
-  // contact form (no name, message, etc.) but if their email domain is
-  // their business website, the website scrape gives Claude something
-  // to work with.
-  draftLeadReply({ email }).catch(() => {});
+  // AI-drafted reply suggestion to wandj@. Deferred via after() so Vercel
+  // waits for the Claude call to complete (10-20s) before tearing down
+  // the function.
+  after(async () => {
+    try {
+      await draftLeadReply({ email });
+    } catch (err) {
+      console.error('[email-capture] drafter failed', err);
+    }
+  });
 
   return NextResponse.json({ success: true });
 }

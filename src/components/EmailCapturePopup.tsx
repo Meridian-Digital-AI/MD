@@ -131,8 +131,7 @@ export default function EmailCapturePopup() {
             Get 10% off your first month
           </h2>
           <p className="mt-2 text-small text-gray-400">
-            Drop your email and we&rsquo;ll send you a discount code plus a
-            free copy of our &ldquo;Local Business Automation&rdquo; guide.
+            Drop your email and we&rsquo;ll send your discount code straight to your inbox.
           </p>
         </div>
 

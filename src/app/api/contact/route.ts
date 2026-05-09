@@ -8,6 +8,7 @@ import {
 import { siteConfig } from '@/lib/data/config';
 import { postToSheet } from '@/lib/sheets-webhook';
 import { sendEmail, escapeHtml } from '@/lib/email/resend';
+import { draftLeadReply } from '@/lib/email/lead-drafter';
 
 /* ── Constants ───────────────────────────────────────────────── */
 
@@ -288,6 +289,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Failures log inside sendEmail; we still mirror to the sheet below as a backup record.
     sendAutoresponder(result.data.email, result.data.name, result.data.businessType).catch(() => {});
     sendOwnerNotification(result.data).catch(() => {});
+
+    // AI-drafted reply suggestion lands in wandj@'s inbox ~30s later for review.
+    draftLeadReply({
+      name: result.data.name,
+      email: result.data.email,
+      phone: result.data.phone,
+      businessName: result.data.businessName,
+      businessType: result.data.businessType,
+      message: result.data.message,
+      sourcePage: result.data.sourcePage,
+    }).catch(() => {});
 
     // Mirror to the Google Sheet / trigger 48h digest pipeline.
     await postToSheet({

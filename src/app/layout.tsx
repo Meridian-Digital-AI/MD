@@ -83,19 +83,23 @@ export default function RootLayout({
         <EmailCapturePopup />
         <PageviewTracker />
 
-        {/* Google Analytics — replace analyticsId in config before launch */}
-        <Script
-          src={`https://www.googletagmanager.com/gtag/js?id=${siteConfig.analyticsId}`}
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', '${siteConfig.analyticsId}');
-          `}
-        </Script>
+        {/* Google Analytics — only loaded if NEXT_PUBLIC_GA_MEASUREMENT_ID is set. */}
+        {siteConfig.analyticsId && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${siteConfig.analyticsId}`}
+              strategy="afterInteractive"
+            />
+            <Script id="google-analytics" strategy="afterInteractive">
+              {`
+                window.dataLayer = window.dataLayer || [];
+                function gtag(){dataLayer.push(arguments);}
+                gtag('js', new Date());
+                gtag('config', '${siteConfig.analyticsId}');
+              `}
+            </Script>
+          </>
+        )}
       </body>
     </html>
   );

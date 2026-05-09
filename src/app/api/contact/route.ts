@@ -7,6 +7,7 @@ import {
 } from '@/lib/data/contacts';
 import { siteConfig } from '@/lib/data/config';
 import { postToSheet } from '@/lib/sheets-webhook';
+import { sendEmail, escapeHtml } from '@/lib/email/resend';
 
 /* ── Constants ───────────────────────────────────────────────── */
 
@@ -168,35 +169,36 @@ function validate(body: ContactPayload): ValidationResult {
   };
 }
 
-/* ── Email placeholders (replace with Resend when API key is available) */
+/* ── Email senders (Resend) ──────────────────────────────────── */
 
-function sendAutoresponder(
+async function sendAutoresponder(
   email: string,
   name: string,
   businessType: BusinessType,
-): void {
+): Promise<void> {
   const demoLink = getDemoLink(businessType);
   const fullDemoUrl = `${siteConfig.url}${demoLink}`;
 
-  console.log('─── AUTORESPONDER EMAIL (placeholder) ───');
-  console.log(`To: ${email}`);
-  console.log('Subject: Thanks for contacting Meridian Digital');
-  console.log(`
-Hi ${name},
+  const html = `
+    <p>Hi ${escapeHtml(name)},</p>
+    <p>Thanks for getting in touch with Meridian Digital. We've received your message and will get back to you within 2 hours during working hours (${escapeHtml(siteConfig.workingHours)}).</p>
+    <p>In the meantime, here's what we've built for businesses like yours:<br>
+      <a href="${fullDemoUrl}">${fullDemoUrl}</a>
+    </p>
+    <p>Speak soon,<br>The Meridian Digital Team<br>
+      <a href="mailto:${escapeHtml(siteConfig.email)}">${escapeHtml(siteConfig.email)}</a> · ${escapeHtml(siteConfig.phone)}
+    </p>
+  `;
 
-Thanks for getting in touch with Meridian Digital! We've received your message and will get back to you within 2 hours during working hours (${siteConfig.workingHours}).
-
-In the meantime, you might like to see what we've built for businesses like yours:
-${fullDemoUrl}
-
-Speak soon,
-The Meridian Digital Team
-${siteConfig.email} | ${siteConfig.phone}
-  `.trim());
-  console.log('──────────────────────────────────────────');
+  await sendEmail({
+    to: email,
+    subject: 'Thanks for contacting Meridian Digital',
+    html,
+    replyTo: siteConfig.email,
+  });
 }
 
-function sendOwnerNotification(
+async function sendOwnerNotification(
   data: {
     name: string;
     email: string;
@@ -207,28 +209,40 @@ function sendOwnerNotification(
     source: ContactSource;
     sourcePage?: string;
   },
-): void {
+): Promise<void> {
   const timestamp = new Date().toISOString();
 
-  console.log('─── OWNER NOTIFICATION EMAIL (placeholder) ───');
-  console.log(`To: ${siteConfig.email}`);
-  console.log(`Subject: New enquiry from ${data.name} — ${data.businessType}`);
-  console.log(`
-New contact form submission:
+  const rows: Array<[string, string]> = [
+    ['Name', data.name],
+    ['Email', data.email],
+    ['Phone', data.phone],
+    ['Business', data.businessName],
+    ['Type', data.businessType],
+    ['Source', data.source],
+    ['Source Page', data.sourcePage ?? '(not set)'],
+    ['Submitted', timestamp],
+  ];
 
-Name:          ${data.name}
-Email:         ${data.email}
-Phone:         ${data.phone}
-Business:      ${data.businessName}
-Type:          ${data.businessType}
-Source:        ${data.source}
-Source Page:   ${data.sourcePage ?? '(not set)'}
-Submitted:     ${timestamp}
+  const html = `
+    <h2 style="margin:0 0 12px 0;">New enquiry — ${escapeHtml(data.businessType)}</h2>
+    <table style="border-collapse:collapse;font-family:system-ui,sans-serif;font-size:14px;">
+      ${rows
+        .map(
+          ([label, value]) =>
+            `<tr><td style="padding:4px 12px 4px 0;color:#666;">${escapeHtml(label)}</td><td style="padding:4px 0;"><strong>${escapeHtml(value)}</strong></td></tr>`,
+        )
+        .join('')}
+    </table>
+    <h3 style="margin:20px 0 6px 0;">Message</h3>
+    <p style="white-space:pre-wrap;">${escapeHtml(data.message)}</p>
+  `;
 
-Message:
-${data.message}
-  `.trim());
-  console.log('──────────────────────────────────────────────');
+  await sendEmail({
+    to: siteConfig.email,
+    subject: `New enquiry from ${data.name} — ${data.businessType}`,
+    html,
+    replyTo: data.email,
+  });
 }
 
 /* ── POST handler ────────────────────────────────────────────── */
@@ -270,9 +284,10 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // Create contact record
     const contact = createContact(result.data);
 
-    // Send emails (placeholder — logs to console)
-    sendAutoresponder(result.data.email, result.data.name, result.data.businessType);
-    sendOwnerNotification(result.data);
+    // Fire-and-forget emails so the form response isn't blocked by Resend latency.
+    // Failures log inside sendEmail; we still mirror to the sheet below as a backup record.
+    sendAutoresponder(result.data.email, result.data.name, result.data.businessType).catch(() => {});
+    sendOwnerNotification(result.data).catch(() => {});
 
     // Mirror to the Google Sheet / trigger 48h digest pipeline.
     await postToSheet({

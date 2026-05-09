@@ -1,7 +1,12 @@
 import Link from 'next/link';
 import NewClientForm from './NewClientForm';
+import MetaShareHelper from './MetaShareHelper';
+
+export const dynamic = 'force-dynamic';
 
 export default function NewClientPage() {
+  const businessManagerId = process.env.META_BUSINESS_MANAGER_ID ?? null;
+
   return (
     <div className="max-w-2xl space-y-6">
       <div>
@@ -17,6 +22,8 @@ export default function NewClientPage() {
       </div>
 
       <NewClientForm />
+
+      <MetaShareHelper businessManagerId={businessManagerId} />
     </div>
   );
 }

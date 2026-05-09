@@ -30,7 +30,9 @@ export const siteConfig: SiteConfig = {
   address: 'Exeter, Devon',
   workingHours: 'Monday to Friday, 9am–5pm',
   foundedYear: 2026,
-  analyticsId: 'G-XXXXXXXXXX', // PLACEHOLDER — replace before launch
+  // GA4 Measurement ID is read from NEXT_PUBLIC_GA_MEASUREMENT_ID at build time.
+  // If unset (e.g. dev or before launch), GA scripts are not injected — see layout.tsx.
+  analyticsId: process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || '',
   calBookingUrl: 'https://cal.com/meridian-digital/15min', // PLACEHOLDER — replace with your real Cal.com URL
   social: {
     // PLACEHOLDER — replace before launch

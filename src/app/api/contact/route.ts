@@ -30,8 +30,8 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UK_PHONE_REGEX = /^(?:\+44|0)\d{9,10}$/;
 const HTML_TAG_REGEX = /<[^>]*>/g;
 
-const RATE_LIMIT_MAX = 5;
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000; // 1 hour
+const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 
 /* ── Rate-limit store ────────────────────────────────────────── */
 

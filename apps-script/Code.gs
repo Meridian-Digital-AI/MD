@@ -1,31 +1,23 @@
 /**
- * Meridian Digital — Sheets webhook + 24-hour digest
- * ────────────────────────────────────────────────────
+ * Meridian Digital — Daily digest
+ * ─────────────────────────────────
  * Paste this into Apps Script (Tools → Apps Script) on the
  * "Meridian Digital — Leads & Bookings" sheet.
  *
- * First-time setup (or after editing this file):
- *   1. Replace SHARED_SECRET below with your real shared secret.
- *   2. Run initialize() once from the editor (approve the scopes).
- *   3. Deploy → New deployment → Web app
- *        - Execute as: Me
- *        - Who has access: Anyone
- *      Copy the /exec URL.
- *   4. In Vercel project settings ensure these are set:
- *        SHEETS_WEBHOOK_URL    = <the /exec URL>
- *        SHEETS_WEBHOOK_SECRET = <same string as SHARED_SECRET below>
- *
  * What it does:
- *   - doPost(e) accepts webhook calls from the website and appends
- *     rows to the correct tab based on record.type.
- *   - sendDailyDigest() runs every 24h, emails a summary of:
- *       • the last 24h of activity (visits, signups, contacts, bookings)
- *       • 5 prospect businesses to target today (from the "Daily Targets" tab)
- *     to DIGEST_RECIPIENT. Will NOT send if there's nothing to report
- *     AND no targets pending.
+ *   sendDailyDigest() runs every 24h at 8am, emails a summary of:
+ *     • the last 24h of activity (visits, signups, contacts, bookings)
+ *     • 5 prospect businesses to target today (from the "Daily Targets" tab)
+ *   to DIGEST_RECIPIENT. Skipped only if there's no activity AND no targets.
+ *
+ * Sheet writes (bookings, signups, contacts, pageviews) come straight from
+ * the website via the Google Sheets API + service account — no webhook
+ * needed. This script only reads the sheet and sends mail.
+ *
+ * First-time setup (or after editing this file):
+ *   1. Run initialize() once from the editor (approve the scopes).
+ *      This creates any missing tabs and installs the daily 8am trigger.
  */
-
-const SHARED_SECRET = 'REPLACE_ME_WITH_A_LONG_RANDOM_STRING';
 
 const DIGEST_RECIPIENT = 'wandj@meridian-digital-partners.com';
 const DIGEST_WINDOW_HOURS = 24;
@@ -63,7 +55,7 @@ function initialize() {
   }
 
   // Install / replace daily digest trigger.
-  // Removes any old send48hDigest triggers from the previous version.
+  // Removes the old send48hDigest trigger from the previous version.
   ScriptApp.getProjectTriggers().forEach(t => {
     const fn = t.getHandlerFunction();
     if (fn === 'sendDailyDigest' || fn === 'send48hDigest') ScriptApp.deleteTrigger(t);
@@ -75,88 +67,6 @@ function initialize() {
     .create();
 
   Logger.log('Initialized: tabs ready + daily 8am digest trigger installed.');
-}
-
-/* ─────────────────────────────────────────────────────────── */
-
-function doPost(e) {
-  try {
-    const body = JSON.parse(e.postData.contents || '{}');
-
-    if (body.secret !== SHARED_SECRET) {
-      return ContentService
-        .createTextOutput(JSON.stringify({ ok: false, error: 'unauthorized' }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    const ss = SpreadsheetApp.getActive();
-    const now = body.receivedAt || new Date().toISOString();
-
-    switch (body.type) {
-      case 'booking': {
-        const sh = ss.getSheetByName(TABS.bookings.name);
-        sh.appendRow([
-          body.bookedAt || now,
-          body.slotDisplay || body.slotISO || '',
-          body.name || '',
-          body.email || '',
-          body.phone || '',
-          body.businessName || '',
-          body.ip || '',
-        ]);
-        break;
-      }
-      case 'email-signup': {
-        const sh = ss.getSheetByName(TABS.emailSignups.name);
-        sh.appendRow([
-          body.capturedAt || now,
-          body.email || '',
-          body.source || '',
-          body.ip || '',
-        ]);
-        break;
-      }
-      case 'contact': {
-        const sh = ss.getSheetByName(TABS.contacts.name);
-        sh.appendRow([
-          now,
-          body.name || '',
-          body.email || '',
-          body.phone || '',
-          body.businessName || '',
-          body.businessType || '',
-          body.message || '',
-          body.source || '',
-          body.sourcePage || '',
-          body.ip || '',
-        ]);
-        break;
-      }
-      case 'pageview': {
-        const sh = ss.getSheetByName(TABS.pageviews.name);
-        sh.appendRow([
-          body.visitedAt || now,
-          body.path || '',
-          body.referrer || '',
-          body.userAgent || '',
-          body.ip || '',
-        ]);
-        break;
-      }
-      default:
-        return ContentService
-          .createTextOutput(JSON.stringify({ ok: false, error: 'unknown type' }))
-          .setMimeType(ContentService.MimeType.JSON);
-    }
-
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: true }))
-      .setMimeType(ContentService.MimeType.JSON);
-  } catch (err) {
-    return ContentService
-      .createTextOutput(JSON.stringify({ ok: false, error: String(err) }))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
 }
 
 /* ─────────────────────────────────────────────────────────── */

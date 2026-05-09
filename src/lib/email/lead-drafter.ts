@@ -43,6 +43,7 @@ export type LeadContext = {
  * has already returned.
  */
 export async function draftLeadReply(lead: LeadContext): Promise<void> {
+  console.log('[lead-drafter] start', { email: lead.email, hasKey: !!process.env.ANTHROPIC_API_KEY });
   if (!process.env.ANTHROPIC_API_KEY) {
     console.warn('[lead-drafter] ANTHROPIC_API_KEY missing — skipping');
     return;
@@ -50,10 +51,13 @@ export async function draftLeadReply(lead: LeadContext): Promise<void> {
 
   try {
     const websiteHint = await scrapeBusinessWebsite(lead.email);
+    console.log('[lead-drafter] scrape done', websiteHint ? `got ${websiteHint.url}` : 'no scrape');
     const draft = await generateDraft(lead, websiteHint);
+    console.log('[lead-drafter] claude done', `${draft.length} chars`);
     await emailDraft(lead, draft, websiteHint);
+    console.log('[lead-drafter] sent draft email for', lead.email);
   } catch (err) {
-    console.error('[lead-drafter] failed', err);
+    console.error('[lead-drafter] failed', { email: lead.email, error: (err as Error)?.message, stack: (err as Error)?.stack });
   }
 }
 
